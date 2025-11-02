@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-R" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hệ Thống Quản Lý Key 1 Lần</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      type="module"
+      src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"
+    ></script>
+    <script
+      nomodule
+      src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"
+    ></script>
+    <style>
+      /* CSS cho hiệu ứng loading */
+      .loader {
+        border-top-color: #3498db;
+        -webkit-animation: spin 1s linear infinite;
+        animation: spin 1s linear infinite;
+      }
+      @-webkit-keyframes spin {
+        0% {
+          -webkit-transform: rotate(0deg);
+        }
+        100% {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      /* Ẩn các view ban đầu */
+      #admin-view,
+      #redeem-view,
+      #loading-view {
+        display: none;
+      }
+      /* Style cho modal config key */
+      #key-limit-group.hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 font-sans leading-normal tracking-normal">
+    <div
+      id="loading-view"
+      class="flex justify-center items-center min-h-screen"
+    >
+      <div
+        class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-32 w-32"
+      ></div>
+    </div>
+
+    <div
+      id="redeem-view"
+      class="min-h-screen flex items-center justify-center bg-gray-900 text-white"
+    >
+      <div
+        class="text-center p-10 bg-gray-800 rounded-lg shadow-xl max-w-md mx-auto"
+      >
+        <h1 class="text-3xl font-bold mb-4">Đang Kiểm Tra Key</h1>
+        <p id="redeem-message" class="text-lg text-gray-300">
+          Vui lòng chờ trong giây lát...
+        </p>
+        <div
+          id="redeem-loader"
+          class="loader ease-linear rounded-full border-4 border-t-4 border-gray-500 h-16 w-16 mx-auto my-4"
+        ></div>
+      </div>
+    </div>
+
+    <div id="admin-view" class="container mx-auto max-w-5xl p-4 md:p-8">
+      <header class="mb-8">
+        <h1 class="text-4xl font-bold text-gray-800">Hệ Thống Quản Lý Key</h1>
+        <p class="text-lg text-gray-600">
+          Chào mừng bạn! Quản lý các link và tạo key truy cập tại đây.
+        </p>
+        <p class="text-sm text-gray-500 mt-2">
+          ID Người Dùng:
+          <code id="user-id-display" class="bg-gray-200 px-2 py-1 rounded"
+            >...</code
+          >
+        </p>
+      </header>
+
+      <div
+        id="generated-key-modal"
+        class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4"
+      >
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-2xl font-bold text-green-600">
+              Tạo Key Thành Công!
+            </h3>
+            <button
+              onclick="closeModal('generated-key-modal')"
+              class="text-gray-400 hover:text-gray-600"
+            >
+              <ion-icon name="close-outline" class="text-3xl"></ion-icon>
+            </button>
+          </div>
+          <p class="text-gray-700 mb-4">
+            Hãy sao chép link dưới đây và gửi cho người mua của bạn.
+          </p>
+          <div class="relative">
+            <input
+              id="generated-key-link"
+              type="text"
+              readonly
+              class="w-full p-3 bg-gray-100 border rounded-lg text-gray-700 pr-12"
+            />
+            <button
+              onclick="copyKeyLink()"
+              class="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg"
+            >
+              <ion-icon name="clipboard-outline"></ion-icon>
+            </button>
+          </div>
+          <p id="copy-success" class="text-green-500 text-sm mt-2 hidden">
+            Đã sao chép!
+          </p>
+        </div>
+      </div>
+
+      <div
+        id="generate-key-config-modal"
+        class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4"
+      >
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-2xl font-bold text-gray-800">Cấu Hình Key Mới</h3>
+            <button
+              onclick="closeModal('generate-key-config-modal')"
+              class="text-gray-400 hover:text-gray-600"
+            >
+              <ion-icon name="close-outline" class="text-3xl"></ion-icon>
+            </button>
+          </div>
+          <p class="text-gray-700 mb-4">
+            Tạo key cho link:
+            <strong id="config-link-name" class="text-blue-600">...</strong>
+          </p>
+
+          <form id="generate-key-form">
+            <input type="hidden" id="config-link-id" />
+
+            <div class="mb-4">
+              <label class="block text-gray-700 font-bold mb-2"
+                >Loại Key:</label
+              >
+              <div class="space-y-2">
+                <label class="flex items-center">
+                  <input
+                    type="radio"
+                    name="keyMode"
+                    value="single_use"
+                    class="form-radio text-blue-500"
+                    checked
+                  />
+                  <span class="ml-2 text-gray-700">1 Lần Dùng (Mặc định)</span>
+                </label>
+                <label class="flex items-center">
+                  <input
+                    type="radio"
+                    name="keyMode"
+                    value="limited_users"
+                    class="form-radio text-blue-500"
+                  />
+                  <span class="ml-2 text-gray-700"
+                    >Giới Hạn (Theo số người)</span
+                  >
+                </label>
+                <label class="flex items-center">
+                  <input
+                    type="radio"
+                    name="keyMode"
+                    value="permanent_user"
+                    class="form-radio text-blue-500"
+                  />
+                  <span class="ml-2 text-gray-700"
+                    >Vĩnh Viễn (Cho 1 người)</span
+                  >
+                </label>
+              </div>
+            </div>
+
+            <div id="key-limit-group" class="mb-4 hidden">
+              <label
+                for="key-limit-input"
+                class="block text-gray-700 font-bold mb-2"
+                >Số người tối đa:</label
+              >
+              <input
+                type="number"
+                id="key-limit-input"
+                value="5"
+                min="1"
+                class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <button
+              type="submit"
+              class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out"
+            >
+              Xác Nhận Tạo Key
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="flex flex-col md:flex-row gap-8">
+        <div class="w-full md:w-1/2">
+          <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+              Thêm Link Gốc Mới
+            </h2>
+            <form id="add-link-form">
+              <div class="mb-4">
+                <label
+                  for="link-name"
+                  class="block text-gray-700 font-bold mb-2"
+                  >Tên mô tả (Ví dụ: Đề Sinh GK1)</label
+                >
+                <input
+                  type="text"
+                  id="link-name"
+                  class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div class="mb-4">
+                <label
+                  for="target-url"
+                  class="block text-gray-700 font-bold mb-2"
+                  >Link Gốc (Link Azota, Drive...)</label
+                >
+                <input
+                  type="url"
+                  id="target-url"
+                  class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://azota.vn/..."
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out"
+              >
+                Thêm Link Mới
+              </button>
+            </form>
+          </div>
+
+          <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+              Danh Sách Link Gốc
+            </h2>
+            <div id="links-list" class="space-y-4 max-h-96 overflow-y-auto">
+              <p class="text-gray-500">Chưa có link nào. Hãy thêm ở trên.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-full md:w-1/2">
+          <div class="bg-white p-6 rounded-lg shadow-lg h-full">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+              Lịch Sử Key Đã Tạo
+            </h2>
+            <div id="keys-list" class="space-y-3 max-h-[34rem] overflow-y-auto">
+              <p class="text-gray-500">Chưa tạo key nào.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      // Import các hàm Firebase cần thiết
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      import {
+        getAuth,
+        signInAnonymously,
+        signInWithCustomToken,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import {
+        getDatabase,
+        ref,
+        get,
+        set,
+        push,
+        update,
+        onValue,
+        serverTimestamp as rtdbServerTimestamp,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+      // ---- BIẾN TOÀN CỤC ----
+      let db, auth, userId, appId;
+      let linksPath, keysPath;
+
+      // ---- CÁC BIẾN TRUY CẬP DOM (ELEMENTS) ----
+      const loadingView = document.getElementById("loading-view");
+      const adminView = document.getElementById("admin-view");
+      const redeemView = document.getElementById("redeem-view");
+      const redeemMessage = document.getElementById("redeem-message");
+      const redeemLoader = document.getElementById("redeem-loader");
+      const addLinkForm = document.getElementById("add-link-form");
+      const linkNameInput = document.getElementById("link-name");
+      const targetUrlInput = document.getElementById("target-url");
+      const linksList = document.getElementById("links-list");
+      const keysList = document.getElementById("keys-list");
+      const userIdDisplay = document.getElementById("user-id-display");
+
+      // Modal 1
+      const generatedKeyModal = document.getElementById("generated-key-modal");
+      const generatedKeyLinkInput =
+        document.getElementById("generated-key-link");
+      const copySuccessText = document.getElementById("copy-success");
+
+      // Modal 2 (Mới)
+      const configModal = document.getElementById("generate-key-config-modal");
+      const configForm = document.getElementById("generate-key-form");
+      const configLinkName = document.getElementById("config-link-name");
+      const configLinkIdInput = document.getElementById("config-link-id");
+      const keyLimitGroup = document.getElementById("key-limit-group");
+      const keyLimitInput = document.getElementById("key-limit-input");
+
+      // ---- KHỞI TẠO FIREBASE ----
+      async function initializeFirebase() {
+        // SỬ DỤNG BIẾN TOÀN CỤC, KHÔNG HARDCODE
+        const firebaseConfigStr =
+          typeof __firebase_config !== "undefined" ? __firebase_config : "{}";
+        const firebaseConfig = {
+          apiKey: "AIzaSyDnSzYda3CUXNtWrW8ytW2Wnx3mFunC9Ig",
+          authDomain: "uniquekey-a0912.firebaseapp.com",
+          databaseURL: "https://uniquekey-a0912-default-rtdb.firebaseio.com",
+          projectId: "uniquekey-a0912",
+          storageBucket: "uniquekey-a0912.firebasestorage.app",
+          messagingSenderId: "440795775727",
+          appId: "1:440795775727:web:1c59c88d5039f47a88d11a",
+          measurementId: "G-7W0T3DLH88",
+        };
+
+        if (!firebaseConfig.apiKey) {
+          console.error("Firebase config không hợp lệ!");
+          loadingView.innerText = "Lỗi: Không thể tải cấu hình Firebase.";
+          return;
+        }
+
+        try {
+          const app = initializeApp(firebaseConfig);
+          db = getDatabase(app);
+          auth = getAuth(app);
+
+          // Đăng nhập
+          onAuthStateChanged(auth, async (user) => {
+            if (user) {
+              userId = user.uid;
+              userIdDisplay.textContent = userId;
+
+              linksPath = `artifacts/${appId}/public/data/links`;
+              keysPath = `artifacts/${appId}/public/data/keys`;
+
+              handleRouting();
+              window.onhashchange = handleRouting;
+            } else {
+              // Nếu chưa đăng nhập, thử đăng nhập
+              try {
+                if (
+                  typeof __initial_auth_token !== "undefined" &&
+                  __initial_auth_token
+                ) {
+                  await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                  await signInAnonymously(auth);
+                }
+              } catch (authError) {
+                console.error("Lỗi đăng nhập:", authError);
+                loadingView.innerText = "Lỗi: Không thể xác thực người dùng.";
+              }
+            }
+          });
+        } catch (e) {
+          console.error("Lỗi khởi tạo Firebase:", e);
+          loadingView.innerText = "Lỗi: Không thể khởi tạo ứng dụng.";
+        }
+      }
+
+      // ---- XỬ LÝ ROUTING (ĐIỀU HƯỚNG) ----
+      function handleRouting() {
+        const hash = window.location.hash;
+
+        if (hash.startsWith("#redeem?key=")) {
+          loadingView.style.display = "none";
+          adminView.style.display = "none";
+          redeemView.style.display = "flex";
+          handleRedeemKey(hash.split("key=")[1]);
+        } else {
+          loadingView.style.display = "none";
+          adminView.style.display = "block";
+          redeemView.style.display = "none";
+          loadAdminData();
+        }
+      }
+
+      // ---- LOGIC CHO TRANG ADMIN ----
+      function loadAdminData() {
+        if (!db) return;
+
+        // Gắn listener cho 'links'
+        const linksRef = ref(db, linksPath);
+        onValue(
+          linksRef,
+          (snapshot) => {
+            if (!snapshot.exists()) {
+              linksList.innerHTML =
+                '<p class="text-gray-500">Chưa có link nào. Hãy thêm ở trên.</p>';
+              return;
+            }
+
+            const data = snapshot.val();
+            let links = Object.entries(data).map(([id, value]) => ({
+              id,
+              ...value,
+            }));
+            links.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            linksList.innerHTML = ""; // Xóa list cũ
+            links.forEach((link) => {
+              const el = document.createElement("div");
+              el.className = "bg-gray-50 p-4 rounded-lg border border-gray-200";
+              el.innerHTML = `
+                        <h4 class="font-bold text-lg text-blue-700">${link.name}</h4>
+                        <p class="text-sm text-gray-600 break-words">${link.targetUrl}</p>
+                        <button data-link-id="${link.id}" data-link-name="${link.name}" class="generate-key-btn mt-3 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 text-sm">
+                            Tạo Key Mới
+                        </button>
+                    `;
+              linksList.appendChild(el);
+            });
+
+            // Gắn listener cho các nút "Tạo Key Mới"
+            document.querySelectorAll(".generate-key-btn").forEach((btn) => {
+              btn.onclick = (e) => {
+                const linkId = e.target.getAttribute("data-link-id");
+                const linkName = e.target.getAttribute("data-link-name");
+                // MỞ MODAL CẤU HÌNH
+                openConfigModal(linkId, linkName);
+              };
+            });
+          },
+          (error) => {
+            console.error("Lỗi khi tải links: ", error);
+            linksList.innerHTML =
+              '<p class="text-red-500">Lỗi tải danh sách link.</p>';
+          }
+        );
+
+        // Gắn listener cho 'keys'
+        const keysRef = ref(db, keysPath);
+        onValue(
+          keysRef,
+          (snapshot) => {
+            if (!snapshot.exists()) {
+              keysList.innerHTML =
+                '<p class="text-gray-500">Chưa tạo key nào.</p>';
+              return;
+            }
+
+            const data = snapshot.val();
+            let keys = Object.entries(data).map(([id, value]) => ({
+              id,
+              ...value,
+            }));
+            keys.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            keysList.innerHTML = ""; // Xóa list cũ
+            keys.forEach((key) => {
+              const el = document.createElement("div");
+              el.className = "bg-gray-50 p-3 rounded-lg border";
+
+              // Logic hiển thị trạng thái key mới
+              let statusText = "";
+              let statusClass = "";
+              const userCount = key.allowedUsers
+                ? Object.keys(key.allowedUsers).length
+                : 0;
+
+              // Xử lý key cũ (không có 'mode')
+              if (!key.mode && key.status === "new") {
+                key.mode = "single_use";
+                key.status = "active";
+              } else if (!key.mode && key.status === "used") {
+                key.mode = "single_use";
+              }
+
+              switch (key.mode) {
+                case "single_use":
+                  if (key.status === "used") {
+                    statusText = "1 Lần (Đã dùng)";
+                    statusClass = "text-red-500 line-through";
+                  } else {
+                    statusText = "1 Lần (Mới)";
+                    statusClass = "text-green-500 font-bold";
+                  }
+                  break;
+                case "limited_users":
+                  if (key.status === "full") {
+                    statusText = `Giới Hạn (ĐẦY ${userCount}/${key.maxUses})`;
+                    statusClass = "text-red-500 font-bold";
+                  } else {
+                    statusText = `Giới Hạn (${userCount}/${key.maxUses} người)`;
+                    statusClass = "text-blue-500 font-bold";
+                  }
+                  break;
+                case "permanent_user":
+                  if (key.status === "claimed") {
+                    const ownerId =
+                      userCount > 0 ? Object.keys(key.allowedUsers)[0] : "...";
+                    statusText = `Vĩnh Viễn (Claimed: ...${ownerId.slice(-6)})`;
+                    statusClass = "text-purple-600 font-bold";
+                  } else {
+                    statusText = "Vĩnh Viễn (Chưa claim)";
+                    statusClass = "text-purple-400";
+                  }
+                  break;
+                default:
+                  statusText = "Không rõ";
+                  statusClass = "text-gray-400";
+              }
+
+              // *** BẮT ĐẦU THAY ĐỔI ***
+              // Thêm class "cursor-pointer hover:text-blue-600" và "onclick"
+              el.innerHTML = `
+                        <p 
+                          class="font-mono text-sm text-blue-800 break-all cursor-pointer hover:text-blue-600 transition-colors"
+                          onclick="window.copyKeyFromHistory('${key.id}', this)"
+                          title="Nhấn để sao chép link key"
+                        >
+                          ${key.id}
+                        </p>
+                        <p class="text-sm text-gray-600">Cho: ${
+                          key.linkName || "Link không rõ"
+                        }</p>
+                        <p class="text-sm ${statusClass}">Trạng thái: ${statusText}</p>
+                    `;
+              // *** KẾT THÚC THAY ĐỔI ***
+
+              keysList.appendChild(el);
+            });
+          },
+          (error) => {
+            console.error("Lỗi khi tải keys: ", error);
+            keysList.innerHTML =
+              '<p class="text-red-500">Lỗi tải danh sách key.</p>';
+          }
+        );
+
+        // Gắn listener cho form "Thêm Link"
+        addLinkForm.onsubmit = handleAddLink;
+
+        // Gắn listener cho form "Cấu hình Key" (MỚI)
+        configForm.onsubmit = handleGenerateKeyConfirm;
+
+        // Gắn listener cho radio buttons (MỚI)
+        document.querySelectorAll('input[name="keyMode"]').forEach((radio) => {
+          radio.onchange = (e) => {
+            if (e.target.value === "limited_users") {
+              keyLimitGroup.style.display = "block";
+            } else {
+              keyLimitGroup.style.display = "none";
+            }
+          };
+        });
+      }
+
+      // Hàm xử lý thêm link mới
+      async function handleAddLink(e) {
+        e.preventDefault();
+        const name = linkNameInput.value.trim();
+        const targetUrl = targetUrlInput.value.trim();
+        if (!name || !targetUrl) return;
+
+        try {
+          const newLinkRef = push(ref(db, linksPath));
+          await set(newLinkRef, {
+            name: name,
+            targetUrl: targetUrl,
+            createdAt: rtdbServerTimestamp(),
+          });
+          linkNameInput.value = "";
+          targetUrlInput.value = "";
+        } catch (error) {
+          console.error("Lỗi khi thêm link: ", error);
+          alert("Đã xảy ra lỗi khi thêm link.");
+        }
+      }
+
+      // MỞ MODAL CẤU HÌNH KEY (MỚI)
+      function openConfigModal(linkId, linkName) {
+        configLinkName.textContent = linkName;
+        configLinkIdInput.value = linkId;
+        configForm.reset(); // Reset form về default
+        keyLimitGroup.style.display = "none";
+        configModal.style.display = "flex";
+      }
+
+      // XÁC NHẬN TẠO KEY TỪ MODAL (MỚI)
+      async function handleGenerateKeyConfirm(e) {
+        e.preventDefault();
+        const linkId = configLinkIdInput.value;
+        const linkName = configLinkName.textContent;
+
+        const formData = new FormData(configForm);
+        const mode = formData.get("keyMode");
+
+        let config = {
+          mode: mode,
+          linkId: linkId,
+          linkName: linkName,
+          status: "active", // Trạng thái mới là 'active'
+          createdAt: rtdbServerTimestamp(),
+          allowedUsers: null, // Khởi tạo là null
+        };
+
+        if (mode === "limited_users") {
+          config.maxUses = parseInt(keyLimitInput.value, 10) || 1;
+        }
+
+        try {
+          // Tạo key ngẫu nhiên
+          const randomKey = Math.random().toString(36).substring(2, 12);
+          const keyRef = ref(db, `${keysPath}/${randomKey}`);
+          await set(keyRef, config);
+
+          // Hiển thị modal link đã tạo
+          closeModal("generate-key-config-modal");
+          const redeemLink = `${window.location.origin}${window.location.pathname}#redeem?key=${randomKey}`;
+          generatedKeyLinkInput.value = redeemLink;
+          generatedKeyModal.style.display = "flex";
+          copySuccessText.style.display = "none";
+        } catch (error) {
+          console.error("Lỗi khi tạo key: ", error);
+          alert("Đã xảy ra lỗi khi tạo key.");
+        }
+      }
+
+      // ---- LOGIC CHO TRANG REDEEM (ĐÃ CẬP NHẬT HOÀN TOÀN) ----
+
+      // Hàm trợ giúp chuyển hướng
+      async function redirectToTarget(linkId) {
+        try {
+          const linkRef = ref(db, `${linksPath}/${linkId}`);
+          const linkSnapshot = await get(linkRef);
+          if (linkSnapshot.exists()) {
+            const targetUrl = linkSnapshot.val().targetUrl;
+            redeemMessage.textContent =
+              "Key hợp lệ! Đang chuyển hướng bạn đến link gốc...";
+            redeemLoader.style.display = "none";
+
+            setTimeout(() => {
+              window.location.href = targetUrl;
+            }, 1500);
+          } else {
+            redeemMessage.textContent =
+              "Lỗi: Key hợp lệ nhưng link gốc đã bị xóa.";
+            redeemLoader.style.display = "none";
+          }
+        } catch (e) {
+          redeemMessage.textContent = "Lỗi khi lấy link gốc.";
+          redeemLoader.style.display = "none";
+        }
+      }
+
+      // Hàm xử lý redeem key chính (ĐÃ VIẾT LẠI)
+      async function handleRedeemKey(key) {
+        if (!key || !userId) {
+          redeemMessage.textContent =
+            "Lỗi: Key không hợp lệ hoặc chưa xác thực.";
+          redeemLoader.style.display = "none";
+          return;
+        }
+
+        const keyRef = ref(db, `${keysPath}/${key}`);
+        const currentUserId = userId; // Lấy userId đã đăng nhập
+
+        try {
+          const keySnapshot = await get(keyRef);
+
+          if (!keySnapshot.exists()) {
+            redeemMessage.textContent = "Key không hợp lệ hoặc không tồn tại.";
+            redeemLoader.style.display = "none";
+            return;
+          }
+
+          const keyData = keySnapshot.val();
+
+          // --- Xử lý các key đã hết hạn ---
+          if (
+            keyData.status === "used" ||
+            keyData.status === "full" ||
+            keyData.status === "expired"
+          ) {
+            // Kiểm tra xem người này có trong danh sách 'allowed' không (cho key limited/permanent)
+            if (keyData.allowedUsers && keyData.allowedUsers[currentUserId]) {
+              // Người dùng cũ quay lại
+              await redirectToTarget(keyData.linkId);
+              return;
+            }
+            redeemMessage.textContent = "Key này đã hết lượt sử dụng.";
+            redeemLoader.style.display = "none";
+            return;
+          }
+
+          // --- Xử lý các key CÒN HẠN (active hoặc new) ---
+
+          // Lấy danh sách user đã dùng
+          const allowedUsers = keyData.allowedUsers || {};
+          const isCurrentUserAllowed = allowedUsers[currentUserId] === true;
+          const userCount = Object.keys(allowedUsers).length;
+
+          // TH1: Người dùng cũ quay lại (áp dụng cho limited và permanent)
+          if (isCurrentUserAllowed) {
+            await redirectToTarget(keyData.linkId);
+            return;
+          }
+
+          // TH2: Người dùng mới
+          let mode = keyData.mode;
+
+          // Xử lý key cũ (không có mode)
+          if (!mode && keyData.status === "new") {
+            mode = "single_use";
+          }
+
+          switch (mode) {
+            case "single_use":
+              // Đánh dấu key là 'used'
+              await update(keyRef, {
+                status: "used",
+                usedAt: rtdbServerTimestamp(),
+                usedBy: currentUserId,
+              });
+              await redirectToTarget(keyData.linkId);
+              break;
+
+            case "permanent_user":
+              // Đây là người mới, kiểm tra xem key đã bị claim chưa
+              if (userCount === 0) {
+                // Đây là người ĐẦU TIÊN claim
+                const updates = {};
+                updates[`allowedUsers/${currentUserId}`] = true; // Thêm user
+                updates["status"] = "claimed"; // Đánh dấu đã claim
+
+                await update(keyRef, updates);
+                await redirectToTarget(keyData.linkId);
+              } else {
+                // Key đã bị claim bởi người khác
+                redeemMessage.textContent =
+                  "Key này đã được sở hữu vĩnh viễn bởi người dùng khác.";
+                redeemLoader.style.display = "none";
+              }
+              break;
+
+            case "limited_users":
+              // Đây là người mới, kiểm tra xem còn slot không
+              if (userCount < keyData.maxUses) {
+                // Vẫn còn slot
+                const updates = {};
+                updates[`allowedUsers/${currentUserId}`] = true; // Thêm user
+
+                // Nếu đây là user cuối cùng, set status là 'full'
+                if (userCount + 1 === keyData.maxUses) {
+                  updates["status"] = "full";
+                }
+
+                await update(keyRef, updates);
+                await redirectToTarget(keyData.linkId);
+              } else {
+                // Hết slot
+                redeemMessage.textContent = `Key đã đạt giới hạn tối đa ${keyData.maxUses} người dùng.`;
+                redeemLoader.style.display = "none";
+              }
+              break;
+
+            default:
+              redeemMessage.textContent = "Lỗi: Loại key không xác định.";
+              redeemLoader.style.display = "none";
+          }
+        } catch (error) {
+          console.error("Lỗi khi redeem key: ", error);
+          redeemMessage.textContent =
+            "Đã xảy ra lỗi hệ thống. Vui lòng thử lại.";
+          redeemLoader.style.display = "none";
+        }
+      }
+
+      // ---- HÀM HỖ TRỢ (Modal, Copy) ----
+
+      /**
+       * HÀM MỚI: Sao chép link key từ danh sách lịch sử
+       * @param {string} key - The key ID (ví dụ: 'abc123xyz')
+       * @param {HTMLElement} element - Element đã click để hiển thị feedback
+       */
+      window.copyKeyFromHistory = (key, element) => {
+        const redeemLink = `${window.location.origin}${window.location.pathname}#redeem?key=${key}`;
+
+        if (!navigator.clipboard) {
+          alert("Trình duyệt không hỗ trợ tự động sao chép.");
+          return;
+        }
+
+        navigator.clipboard
+          .writeText(redeemLink)
+          .then(() => {
+            // Hiển thị feedback
+            const originalText = element.innerText;
+            element.innerText = "Đã sao chép link!";
+            element.classList.remove("text-blue-800", "hover:text-blue-600");
+            element.classList.add("text-green-600", "font-bold");
+
+            // Quay lại trạng thái cũ
+            setTimeout(() => {
+              element.innerText = originalText;
+              element.classList.remove("text-green-600", "font-bold");
+              element.classList.add("text-blue-800", "hover:text-blue-600");
+            }, 1500);
+          })
+          .catch((err) => {
+            console.error("Không thể sao chép: ", err);
+            alert("Lỗi khi sao chép.");
+          });
+      };
+
+      // Gán hàm vào window để HTML có thể gọi
+      window.closeModal = (modalId) => {
+        document.getElementById(modalId).style.display = "none";
+      };
+
+      window.copyKeyLink = () => {
+        generatedKeyLinkInput.select();
+        try {
+          document.execCommand("copy");
+          copySuccessText.style.display = "block";
+          setTimeout(() => {
+            copySuccessText.style.display = "none";
+          }, 2000);
+        } catch (err) {
+          console.error("Không thể sao chép: ", err);
+          alert("Không thể sao chép tự động. Vui lòng sao chép thủ công.");
+        }
+      };
+
+      // ---- CHẠY ỨNG DỤNG ----
+      loadingView.style.display = "flex";
+      initializeFirebase();
+    </script>
+  </body>
+</html>
