@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="vi">
   <head>
-    <meta charset="UTF-R" />
+    <meta charset="UTF-8" />
+    <!-- Sửa lỗi gõ 'UTF-R' thành 'UTF-8' -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>KEY</title>
+    <title>Quản Lý Key</title>
+    <!-- Đổi title -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script
       type="module"
@@ -39,16 +41,30 @@
       /* Ẩn các view ban đầu */
       #admin-view,
       #redeem-view,
-      #loading-view {
+      #loading-view,
+      #stats-view {
         display: none;
       }
       /* Style cho modal config key */
-      #key-limit-group.hidden {
+      #key-limit-group.hidden,
+      #edit-key-limit-group.hidden {
         display: none;
+      }
+
+      /* Style cho tab active */
+      .tab-active {
+        border-bottom-color: #3b82f6; /* blue-500 */
+        color: #3b82f6;
+        font-weight: 600;
+      }
+      .tab-inactive {
+        border-bottom-color: transparent;
+        color: #6b7280; /* gray-500 */
       }
     </style>
   </head>
   <body class="bg-gray-100 font-sans leading-normal tracking-normal">
+    <!-- ==== LOADING VIEW ==== -->
     <div
       id="loading-view"
       class="flex justify-center items-center min-h-screen"
@@ -58,6 +74,7 @@
       ></div>
     </div>
 
+    <!-- ==== REDEEM VIEW ==== -->
     <div
       id="redeem-view"
       class="min-h-screen flex items-center justify-center bg-gray-900 text-white"
@@ -76,11 +93,13 @@
       </div>
     </div>
 
-    <div id="admin-view" class="container mx-auto max-w-5xl p-4 md:p-8">
-      <header class="mb-8">
+    <!-- ==== ADMIN VIEW ==== -->
+    <div id="admin-view" class="container mx-auto max-w-7xl p-4 md:p-8">
+      <!-- Header -->
+      <header class="mb-6">
         <h1 class="text-4xl font-bold text-gray-800">Hệ Thống Quản Lý Key</h1>
         <p class="text-lg text-gray-600">
-          Chào mừng bạn! Quản lý các link và tạo key truy cập tại đây.
+          Chào mừng bạn! Quản lý các link, tạo key và xem thống kê tại đây.
         </p>
         <p class="text-sm text-gray-500 mt-2">
           ID Người Dùng:
@@ -90,198 +109,516 @@
         </p>
       </header>
 
-      <div
-        id="generated-key-modal"
-        class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4"
-      >
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="text-2xl font-bold text-green-600">
-              Tạo Key Thành Công!
-            </h3>
-            <button
-              onclick="closeModal('generated-key-modal')"
-              class="text-gray-400 hover:text-gray-600"
-            >
-              <ion-icon name="close-outline" class="text-3xl"></ion-icon>
-            </button>
+      <!-- Tab Navigation -->
+      <nav class="flex border-b-2 border-gray-200 mb-6">
+        <button
+          id="admin-tab"
+          onclick="showView('admin-content')"
+          class="py-3 px-5 text-lg tab-active"
+        >
+          <ion-icon name="list-outline" class="mr-2 align-middle"></ion-icon>
+          Quản Lý
+        </button>
+        <button
+          id="stats-tab"
+          onclick="showView('stats-view')"
+          class="py-3 px-5 text-lg tab-inactive"
+        >
+          <ion-icon
+            name="stats-chart-outline"
+            class="mr-2 align-middle"
+          ></ion-icon>
+          Thống Kê
+        </button>
+      </nav>
+
+      <!-- ==== ADMIN CONTENT VIEW (Quản Lý) ==== -->
+      <div id="admin-content">
+        <div class="flex flex-col md:flex-row gap-8">
+          <!-- Cột Trái: Thêm Link & Danh Sách Link -->
+          <div class="w-full md:w-1/2">
+            <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+              <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+                Thêm Link Gốc Mới
+              </h2>
+              <form id="add-link-form">
+                <div class="mb-4">
+                  <label
+                    for="link-name"
+                    class="block text-gray-700 font-bold mb-2"
+                    >Tên mô tả</label
+                  >
+                  <input
+                    type="text"
+                    id="link-name"
+                    class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div class="mb-4">
+                  <label
+                    for="target-url"
+                    class="block text-gray-700 font-bold mb-2"
+                    >Link Gốc (Link Azota, Drive...)</label
+                  >
+                  <input
+                    type="url"
+                    id="target-url"
+                    class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="https://azota.vn/..."
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out"
+                >
+                  <ion-icon
+                    name="add-circle-outline"
+                    class="mr-1 align-middle"
+                  ></ion-icon>
+                  Thêm Link Mới
+                </button>
+              </form>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+              <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+                Danh Sách Link Gốc
+              </h2>
+              <div id="links-list" class="space-y-4 max-h-96 overflow-y-auto">
+                <p class="text-gray-500">Chưa có link nào. Hãy thêm ở trên.</p>
+              </div>
+            </div>
           </div>
-          <p class="text-gray-700 mb-4">
-            Hãy sao chép link dưới đây và gửi cho người mua của bạn.
-          </p>
-          <div class="relative">
-            <input
-              id="generated-key-link"
-              type="text"
-              readonly
-              class="w-full p-3 bg-gray-100 border rounded-lg text-gray-700 pr-12"
-            />
-            <button
-              onclick="copyKeyLink()"
-              class="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg"
-            >
-              <ion-icon name="clipboard-outline"></ion-icon>
-            </button>
+
+          <!-- Cột Phải: Lịch Sử Key -->
+          <div class="w-full md:w-1/2">
+            <div class="bg-white p-6 rounded-lg shadow-lg h-full">
+              <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+                Lịch Sử Key Đã Tạo
+              </h2>
+              <div
+                id="keys-list"
+                class="space-y-3 max-h-[34rem] overflow-y-auto"
+              >
+                <p class="text-gray-500">Chưa tạo key nào.</p>
+              </div>
+            </div>
           </div>
-          <p id="copy-success" class="text-green-500 text-sm mt-2 hidden">
-            Đã sao chép!
-          </p>
         </div>
       </div>
 
-      <div
-        id="generate-key-config-modal"
-        class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4"
-      >
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="text-2xl font-bold text-gray-800">Cấu Hình Key Mới</h3>
-            <button
-              onclick="closeModal('generate-key-config-modal')"
-              class="text-gray-400 hover:text-gray-600"
-            >
-              <ion-icon name="close-outline" class="text-3xl"></ion-icon>
-            </button>
+      <!-- ==== STATS VIEW (Thống Kê) ==== -->
+      <div id="stats-view" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div
+            class="bg-white p-6 rounded-lg shadow-lg flex items-center space-x-4"
+          >
+            <div class="p-3 bg-blue-100 rounded-full">
+              <ion-icon
+                name="link-outline"
+                class="text-3xl text-blue-600"
+              ></ion-icon>
+            </div>
+            <div>
+              <p class="text-lg text-gray-500">Tổng Số Link</p>
+              <p
+                id="stats-total-links"
+                class="text-4xl font-bold text-gray-800"
+              >
+                0
+              </p>
+            </div>
           </div>
-          <p class="text-gray-700 mb-4">
-            Tạo key cho link:
-            <strong id="config-link-name" class="text-blue-600">...</strong>
-          </p>
-
-          <form id="generate-key-form">
-            <input type="hidden" id="config-link-id" />
-
-            <div class="mb-4">
-              <label class="block text-gray-700 font-bold mb-2"
-                >Loại Key:</label
-              >
-              <div class="space-y-2">
-                <label class="flex items-center">
-                  <input
-                    type="radio"
-                    name="keyMode"
-                    value="single_use"
-                    class="form-radio text-blue-500"
-                    checked
-                  />
-                  <span class="ml-2 text-gray-700">1 Lần Dùng (Mặc định)</span>
-                </label>
-                <label class="flex items-center">
-                  <input
-                    type="radio"
-                    name="keyMode"
-                    value="limited_users"
-                    class="form-radio text-blue-500"
-                  />
-                  <span class="ml-2 text-gray-700"
-                    >Giới Hạn (Theo số người)</span
-                  >
-                </label>
-                <label class="flex items-center">
-                  <input
-                    type="radio"
-                    name="keyMode"
-                    value="permanent_user"
-                    class="form-radio text-blue-500"
-                  />
-                  <span class="ml-2 text-gray-700"
-                    >Vĩnh Viễn (Cho 1 người)</span
-                  >
-                </label>
-              </div>
+          <div
+            class="bg-white p-6 rounded-lg shadow-lg flex items-center space-x-4"
+          >
+            <div class="p-3 bg-green-100 rounded-full">
+              <ion-icon
+                name="key-outline"
+                class="text-3xl text-green-600"
+              ></ion-icon>
             </div>
-
-            <div id="key-limit-group" class="mb-4 hidden">
-              <label
-                for="key-limit-input"
-                class="block text-gray-700 font-bold mb-2"
-                >Số người tối đa:</label
-              >
-              <input
-                type="number"
-                id="key-limit-input"
-                value="5"
-                min="1"
-                class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <div>
+              <p class="text-lg text-gray-500">Tổng Số Key</p>
+              <p id="stats-total-keys" class="text-4xl font-bold text-gray-800">
+                0
+              </p>
             </div>
-
-            <button
-              type="submit"
-              class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out"
-            >
-              Xác Nhận Tạo Key
-            </button>
-          </form>
+          </div>
+          <div
+            class="bg-white p-6 rounded-lg shadow-lg flex items-center space-x-4"
+          >
+            <div class="p-3 bg-purple-100 rounded-full">
+              <ion-icon
+                name="analytics-outline"
+                class="text-3xl text-purple-600"
+              ></ion-icon>
+            </div>
+            <div>
+              <p class="text-lg text-gray-500">Tổng Lượt Click</p>
+              <p
+                id="stats-total-clicks"
+                class="text-4xl font-bold text-gray-800"
+              >
+                0
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div class="flex flex-col md:flex-row gap-8">
-        <div class="w-full md:w-1/2">
-          <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
-              Thêm Link Gốc Mới
-            </h2>
-            <form id="add-link-form">
-              <div class="mb-4">
-                <label
-                  for="link-name"
-                  class="block text-gray-700 font-bold mb-2"
-                  >Tên mô tả (Ví dụ: Đề Sinh GK1)</label
-                >
-                <input
-                  type="text"
-                  id="link-name"
-                  class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div class="mb-4">
-                <label
-                  for="target-url"
-                  class="block text-gray-700 font-bold mb-2"
-                  >Link Gốc (Link Azota, Drive...)</label
-                >
-                <input
-                  type="url"
-                  id="target-url"
-                  class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://azota.vn/..."
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out"
-              >
-                Thêm Link Mới
-              </button>
-            </form>
-          </div>
-
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div class="bg-white p-6 rounded-lg shadow-lg">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
-              Danh Sách Link Gốc
-            </h2>
-            <div id="links-list" class="space-y-4 max-h-96 overflow-y-auto">
-              <p class="text-gray-500">Chưa có link nào. Hãy thêm ở trên.</p>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+              Top 5 Link Nhiều Click Nhất
+            </h3>
+            <div id="stats-top-links" class="space-y-3">
+              <p class="text-gray-500">Chưa có dữ liệu click.</p>
             </div>
           </div>
-        </div>
-
-        <div class="w-full md:w-1/2">
-          <div class="bg-white p-6 rounded-lg shadow-lg h-full">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
-              Lịch Sử Key Đã Tạo
-            </h2>
-            <div id="keys-list" class="space-y-3 max-h-[34rem] overflow-y-auto">
-              <p class="text-gray-500">Chưa tạo key nào.</p>
+          <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+              Top 5 Key Sử Dụng Nhiều Nhất
+            </h3>
+            <div id="stats-top-keys" class="space-y-3">
+              <p class="text-gray-500">Chưa có dữ liệu click.</p>
             </div>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- ==== MODALS ==== -->
+
+    <!-- Modal: Tạo Key Thành Công -->
+    <div
+      id="generated-key-modal"
+      class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-2xl font-bold text-green-600">Tạo Key Thành Công!</h3>
+          <button
+            onclick="closeModal('generated-key-modal')"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <ion-icon name="close-outline" class="text-3xl"></ion-icon>
+          </button>
+        </div>
+        <p class="text-gray-700 mb-4">
+          Hãy sao chép link dưới đây và gửi cho người mua của bạn.
+        </p>
+        <div class="relative">
+          <input
+            id="generated-key-link"
+            type="text"
+            readonly
+            class="w-full p-3 bg-gray-100 border rounded-lg text-gray-700 pr-12"
+          />
+          <button
+            onclick="copyKeyLink()"
+            class="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg"
+          >
+            <ion-icon name="clipboard-outline"></ion-icon>
+          </button>
+        </div>
+        <p id="copy-success" class="text-green-500 text-sm mt-2 hidden">
+          Đã sao chép!
+        </p>
+      </div>
+    </div>
+
+    <!-- Modal: Cấu Hình Key Mới -->
+    <div
+      id="generate-key-config-modal"
+      class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-2xl font-bold text-gray-800">Cấu Hình Key Mới</h3>
+          <button
+            onclick="closeModal('generate-key-config-modal')"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <ion-icon name="close-outline" class="text-3xl"></ion-icon>
+          </button>
+        </div>
+        <p class="text-gray-700 mb-4">
+          Tạo key cho link:
+          <strong id="config-link-name" class="text-blue-600">...</strong>
+        </p>
+
+        <form id="generate-key-form">
+          <input type="hidden" id="config-link-id" />
+          <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Loại Key:</label>
+            <div class="space-y-2">
+              <label class="flex items-center">
+                <input
+                  type="radio"
+                  name="keyMode"
+                  value="single_use"
+                  class="form-radio text-blue-500"
+                  checked
+                />
+                <span class="ml-2 text-gray-700">1 Lần Dùng (Mặc định)</span>
+              </label>
+              <label class="flex items-center">
+                <input
+                  type="radio"
+                  name="keyMode"
+                  value="limited_users"
+                  class="form-radio text-blue-500"
+                />
+                <span class="ml-2 text-gray-700">Giới Hạn (Theo số người)</span>
+              </label>
+              <label class="flex items-center">
+                <input
+                  type="radio"
+                  name="keyMode"
+                  value="permanent_user"
+                  class="form-radio text-blue-500"
+                />
+                <span class="ml-2 text-gray-700">Vĩnh Viễn (Cho 1 người)</span>
+              </label>
+            </div>
+          </div>
+          <div id="key-limit-group" class="mb-4 hidden">
+            <label
+              for="key-limit-input"
+              class="block text-gray-700 font-bold mb-2"
+              >Số người tối đa:</label
+            >
+            <input
+              type="number"
+              id="key-limit-input"
+              value="5"
+              min="1"
+              class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <button
+            type="submit"
+            class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out"
+          >
+            Xác Nhận Tạo Key
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Chỉnh Sửa Link -->
+    <div
+      id="edit-link-modal"
+      class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-2xl font-bold text-gray-800">Chỉnh Sửa Link Gốc</h3>
+          <button
+            onclick="closeModal('edit-link-modal')"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <ion-icon name="close-outline" class="text-3xl"></ion-icon>
+          </button>
+        </div>
+        <form id="edit-link-form">
+          <input type="hidden" id="edit-link-id" />
+          <div class="mb-4">
+            <label
+              for="edit-link-name"
+              class="block text-gray-700 font-bold mb-2"
+              >Tên mô tả</label
+            >
+            <input
+              type="text"
+              id="edit-link-name"
+              class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div class="mb-4">
+            <label
+              for="edit-target-url"
+              class="block text-gray-700 font-bold mb-2"
+              >Link Gốc</label
+            >
+            <input
+              type="url"
+              id="edit-target-url"
+              class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="https://azota.vn/..."
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out"
+          >
+            Lưu Thay Đổi
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Chỉnh Sửa Key -->
+    <div
+      id="edit-key-modal"
+      class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-2xl font-bold text-gray-800">Chỉnh Sửa Key</h3>
+          <button
+            onclick="closeModal('edit-key-modal')"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <ion-icon name="close-outline" class="text-3xl"></ion-icon>
+          </button>
+        </div>
+        <form id="edit-key-form">
+          <input type="hidden" id="edit-key-id" />
+          <p class="mb-2">
+            Đang sửa Key:
+            <code
+              id="edit-key-id-display"
+              class="bg-gray-200 p-1 rounded"
+            ></code>
+          </p>
+          <p class="mb-4">
+            Cho link:
+            <strong id="edit-key-link-name" class="text-blue-600"></strong>
+          </p>
+
+          <div id="edit-key-limit-group" class="mb-4 hidden">
+            <label
+              for="edit-key-limit-input"
+              class="block text-gray-700 font-bold mb-2"
+              >Số người tối đa (chỉ áp dụng cho key "Giới Hạn"):</label
+            >
+            <input
+              type="number"
+              id="edit-key-limit-input"
+              min="1"
+              class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out mb-3"
+          >
+            Lưu Thay Đổi
+          </button>
+          <button
+            type="button"
+            id="reset-key-btn"
+            class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out"
+          >
+            Reset Key (Mở lại key)
+          </button>
+          <p class="text-sm text-gray-600 mt-2">
+            * Reset sẽ xóa toàn bộ người đã dùng và kích hoạt lại key.
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Thống Kê Key Chi Tiết -->
+    <div
+      id="key-stats-modal"
+      class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-2xl font-bold text-gray-800">Chi Tiết Key</h3>
+          <button
+            onclick="closeModal('key-stats-modal')"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <ion-icon name="close-outline" class="text-3xl"></ion-icon>
+          </button>
+        </div>
+        <div class="space-y-3">
+          <p>
+            <strong>Key:</strong>
+            <code id="stats-key-id" class="bg-gray-200 p-1 rounded">...</code>
+          </p>
+          <p>
+            <strong>Link Gốc:</strong>
+            <span id="stats-key-link-name" class="font-semibold">...</span>
+          </p>
+          <p>
+            <strong>Ngày Tạo:</strong>
+            <span id="stats-key-created-at">...</span>
+          </p>
+          <p><strong>Loại Key:</strong> <span id="stats-key-mode">...</span></p>
+          <p>
+            <strong>Trạng Thái:</strong>
+            <span
+              id="stats-key-status"
+              class="font-bold py-1 px-2 rounded"
+            ></span>
+          </p>
+          <p>
+            <strong>Tổng Lượt Click:</strong>
+            <span id="stats-key-total-clicks" class="font-bold">...</span>
+          </p>
+          <p>
+            <strong>Số Người Đã Dùng:</strong>
+            <span id="stats-key-user-count" class="font-bold">...</span>
+          </p>
+          <div id="stats-key-limit-details" class="hidden">
+            <p>
+              <strong>Giới Hạn:</strong>
+              <span id="stats-key-max-uses" class="font-bold">...</span>
+            </p>
+          </div>
+
+          <!-- Danh sách người dùng -->
+          <h4 class="text-lg font-bold pt-3 border-t">Danh Sách Người Dùng</h4>
+          <div
+            id="stats-key-user-list"
+            class="max-h-60 overflow-y-auto bg-gray-50 border rounded-lg p-3 space-y-2"
+          >
+            <p class="text-gray-500">Chưa có ai sử dụng key này.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Xác Nhận Xóa -->
+    <div
+      id="confirm-modal"
+      class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+        <h3 class="text-2xl font-bold text-gray-800 mb-4">
+          Bạn có chắc không?
+        </h3>
+        <p id="confirm-message" class="text-gray-700 mb-6">
+          Hành động này không thể hoàn tác.
+        </p>
+        <div class="flex justify-end space-x-4">
+          <button
+            id="cancel-delete-btn"
+            onclick="closeModal('confirm-modal')"
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg"
+          >
+            Hủy
+          </button>
+          <button
+            id="confirm-delete-btn"
+            class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
+          >
+            Xác Nhận Xóa
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==== SCRIPT ==== -->
     <script type="module">
       // Import các hàm Firebase cần thiết
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -299,12 +636,15 @@
         push,
         update,
         onValue,
+        remove, // Thêm 'remove'
         serverTimestamp as rtdbServerTimestamp,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
       // ---- BIẾN TOÀN CỤC ----
       let db, auth, userId, appId;
       let linksPath, keysPath;
+      let allLinksData = {}; // Cache data
+      let allKeysData = {}; // Cache data
 
       // ---- CÁC BIẾN TRUY CẬP DOM (ELEMENTS) ----
       const loadingView = document.getElementById("loading-view");
@@ -319,13 +659,19 @@
       const keysList = document.getElementById("keys-list");
       const userIdDisplay = document.getElementById("user-id-display");
 
-      // Modal 1
+      // Views & Tabs
+      const adminContentView = document.getElementById("admin-content");
+      const statsView = document.getElementById("stats-view");
+      const adminTab = document.getElementById("admin-tab");
+      const statsTab = document.getElementById("stats-tab");
+
+      // Modal 1: Generated Key
       const generatedKeyModal = document.getElementById("generated-key-modal");
       const generatedKeyLinkInput =
         document.getElementById("generated-key-link");
       const copySuccessText = document.getElementById("copy-success");
 
-      // Modal 2 (Mới)
+      // Modal 2: Config Key
       const configModal = document.getElementById("generate-key-config-modal");
       const configForm = document.getElementById("generate-key-form");
       const configLinkName = document.getElementById("config-link-name");
@@ -333,12 +679,148 @@
       const keyLimitGroup = document.getElementById("key-limit-group");
       const keyLimitInput = document.getElementById("key-limit-input");
 
+      // Modal 3: Edit Link
+      const editLinkModal = document.getElementById("edit-link-modal");
+      const editLinkForm = document.getElementById("edit-link-form");
+      const editLinkIdInput = document.getElementById("edit-link-id");
+      const editLinkNameInput = document.getElementById("edit-link-name");
+      const editTargetUrlInput = document.getElementById("edit-target-url");
+
+      // Modal 4: Edit Key
+      const editKeyModal = document.getElementById("edit-key-modal");
+      const editKeyForm = document.getElementById("edit-key-form");
+      const editKeyIdInput = document.getElementById("edit-key-id");
+      const editKeyIdDisplay = document.getElementById("edit-key-id-display");
+      const editKeyLinkName = document.getElementById("edit-key-link-name");
+      const editKeyLimitGroup = document.getElementById("edit-key-limit-group");
+      const editKeyLimitInput = document.getElementById("edit-key-limit-input");
+      const resetKeyBtn = document.getElementById("reset-key-btn");
+
+      // Modal 5: Key Stats
+      const keyStatsModal = document.getElementById("key-stats-modal");
+      const statsKeyId = document.getElementById("stats-key-id");
+      const statsKeyLinkName = document.getElementById("stats-key-link-name");
+      const statsKeyCreatedAt = document.getElementById("stats-key-created-at");
+      const statsKeyMode = document.getElementById("stats-key-mode");
+      const statsKeyStatus = document.getElementById("stats-key-status");
+      const statsKeyTotalClicks = document.getElementById(
+        "stats-key-total-clicks"
+      );
+      const statsKeyUserCount = document.getElementById("stats-key-user-count");
+      const statsKeyLimitDetails = document.getElementById(
+        "stats-key-limit-details"
+      );
+      const statsKeyMaxUses = document.getElementById("stats-key-max-uses");
+      const statsKeyUserList = document.getElementById("stats-key-user-list");
+
+      // Modal 6: Confirm
+      const confirmModal = document.getElementById("confirm-modal");
+      const confirmMessage = document.getElementById("confirm-message");
+      const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
+
+      // Stats View Elements
+      const statsTotalLinks = document.getElementById("stats-total-links");
+      const statsTotalKeys = document.getElementById("stats-total-keys");
+      const statsTotalClicks = document.getElementById("stats-total-clicks");
+      const statsTopLinks = document.getElementById("stats-top-links");
+      const statsTopKeys = document.getElementById("stats-top-keys");
+
+      // ---- HÀM TIỆN ÍCH ----
+
+      // Hàm đóng modal
+      window.closeModal = (modalId) => {
+        document.getElementById(modalId).style.display = "none";
+      };
+
+      // Hàm format timestamp
+      function formatTimestamp(ts) {
+        if (!ts) return "Không rõ";
+        try {
+          return new Date(ts).toLocaleString("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        } catch (e) {
+          return "Ngày không hợp lệ";
+        }
+      }
+
+      // Hàm sao chép link key đã tạo
+      window.copyKeyLink = () => {
+        generatedKeyLinkInput.select();
+        try {
+          // Sử dụng document.execCommand thay vì navigator.clipboard
+          // để đảm bảo hoạt động trong iframe
+          document.execCommand("copy");
+          copySuccessText.style.display = "block";
+          setTimeout(() => {
+            copySuccessText.style.display = "none";
+          }, 2000);
+        } catch (err) {
+          console.error("Không thể sao chép: ", err);
+          // Không dùng alert
+          copySuccessText.textContent = "Lỗi khi sao chép!";
+          copySuccessText.style.display = "block";
+        }
+      };
+
+      // Hàm sao chép link key từ lịch sử
+      window.copyKeyFromHistory = (key, element) => {
+        const redeemLink = `${window.location.origin}${window.location.pathname}#redeem?key=${key}`;
+        const input = document.createElement("textarea");
+        input.value = redeemLink;
+        document.body.appendChild(input);
+        input.select();
+        try {
+          document.execCommand("copy");
+          // Hiển thị feedback
+          const originalText = element.innerText;
+          element.innerText = "Đã sao chép link!";
+          element.classList.remove("text-blue-800", "hover:text-blue-600");
+          element.classList.add("text-green-600", "font-bold");
+
+          // Quay lại trạng thái cũ
+          setTimeout(() => {
+            element.innerText = originalText;
+            element.classList.remove("text-green-600", "font-bold");
+            element.classList.add("text-blue-800", "hover:text-blue-600");
+          }, 1500);
+        } catch (err) {
+          console.error("Không thể sao chép: ", err);
+        }
+        document.body.removeChild(input);
+      };
+
+      // Hàm chuyển đổi tab admin/stats
+      window.showView = (viewId) => {
+        if (viewId === "admin-content") {
+          adminContentView.style.display = "block";
+          statsView.style.display = "none";
+          adminTab.classList.add("tab-active");
+          adminTab.classList.remove("tab-inactive");
+          statsTab.classList.add("tab-inactive");
+          statsTab.classList.remove("tab-active");
+        } else {
+          adminContentView.style.display = "none";
+          statsView.style.display = "block";
+          adminTab.classList.remove("tab-active");
+          adminTab.classList.add("tab-inactive");
+          statsTab.classList.remove("tab-inactive");
+          statsTab.classList.add("tab-active");
+          // Cập nhật thống kê mỗi khi xem tab
+          updateStatsView();
+        }
+      };
+
       // ---- KHỞI TẠO FIREBASE ----
       async function initializeFirebase() {
         // SỬ DỤNG BIẾN TOÀN CỤC, KHÔNG HARDCODE
         const firebaseConfigStr =
           typeof __firebase_config !== "undefined" ? __firebase_config : "{}";
-        const firebaseConfig = {
+        let firebaseConfig = {
           apiKey: "AIzaSyDnSzYda3CUXNtWrW8ytW2Wnx3mFunC9Ig",
           authDomain: "uniquekey-a0912.firebaseapp.com",
           databaseURL: "https://uniquekey-a0912-default-rtdb.firebaseio.com",
@@ -349,11 +831,37 @@
           measurementId: "G-7W0T3DLH88",
         };
 
-        if (!firebaseConfig.apiKey) {
-          console.error("Firebase config không hợp lệ!");
+        try {
+          firebaseConfig = JSON.parse(firebaseConfigStr);
+          if (!firebaseConfig.apiKey || !firebaseConfig.databaseURL) {
+            // Nếu config không hợp lệ, thử dùng config hardcode (chỉ để demo/debug)
+            // Trong môi trường production, __firebase_config PHẢI có
+            console.warn(
+              "__firebase_config không hợp lệ. Sử dụng config dự phòng."
+            );
+            firebaseConfig = {
+              apiKey: "AIzaSyDnSzYda3CUXNtWrW8ytW2Wnx3mFunC9Ig",
+              authDomain: "uniquekey-a0912.firebaseapp.com",
+              databaseURL:
+                "https://uniquekey-a0912-default-rtdb.firebaseio.com",
+              projectId: "uniquekey-a0912",
+              storageBucket: "uniquekey-a0912.firebasestorage.app",
+              messagingSenderId: "440795775727",
+              appId: "1:440795775727:web:1c59c88d5039f47a88d11a",
+              measurementId: "G-7W0T3DLH88",
+            };
+          }
+        } catch (e) {
+          console.error("Lỗi parse Firebase config:", e);
           loadingView.innerText = "Lỗi: Không thể tải cấu hình Firebase.";
           return;
         }
+
+        // SỬ DỤNG BIẾN TOÀN CỤC APP_ID
+        appId =
+          typeof __app_id !== "undefined"
+            ? __app_id
+            : "default-app-id-uniquekey";
 
         try {
           const app = initializeApp(firebaseConfig);
@@ -366,6 +874,7 @@
               userId = user.uid;
               userIdDisplay.textContent = userId;
 
+              // Đường dẫn dữ liệu public
               linksPath = `artifacts/${appId}/public/data/links`;
               keysPath = `artifacts/${appId}/public/data/keys`;
 
@@ -407,6 +916,7 @@
           loadingView.style.display = "none";
           adminView.style.display = "block";
           redeemView.style.display = "none";
+          window.showView("admin-content"); // Hiển thị tab admin mặc định
           loadAdminData();
         }
       }
@@ -415,7 +925,7 @@
       function loadAdminData() {
         if (!db) return;
 
-        // Gắn listener cho 'links'
+        // 1. Gắn listener cho 'links'
         const linksRef = ref(db, linksPath);
         onValue(
           linksRef,
@@ -423,11 +933,12 @@
             if (!snapshot.exists()) {
               linksList.innerHTML =
                 '<p class="text-gray-500">Chưa có link nào. Hãy thêm ở trên.</p>';
+              allLinksData = {}; // Xóa cache
               return;
             }
 
-            const data = snapshot.val();
-            let links = Object.entries(data).map(([id, value]) => ({
+            allLinksData = snapshot.val(); // Cập nhật cache
+            let links = Object.entries(allLinksData).map(([id, value]) => ({
               id,
               ...value,
             }));
@@ -437,24 +948,35 @@
             links.forEach((link) => {
               const el = document.createElement("div");
               el.className = "bg-gray-50 p-4 rounded-lg border border-gray-200";
-              el.innerHTML = `
-                        <h4 class="font-bold text-lg text-blue-700">${link.name}</h4>
-                        <p class="text-sm text-gray-600 break-words">${link.targetUrl}</p>
-                        <button data-link-id="${link.id}" data-link-name="${link.name}" class="generate-key-btn mt-3 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 text-sm">
-                            Tạo Key Mới
-                        </button>
-                    `;
-              linksList.appendChild(el);
-            });
+              // Encode URL để truyền vào onclick
+              const safeUrl = CSS.escape(link.targetUrl);
+              const safeName = CSS.escape(link.name);
 
-            // Gắn listener cho các nút "Tạo Key Mới"
-            document.querySelectorAll(".generate-key-btn").forEach((btn) => {
-              btn.onclick = (e) => {
-                const linkId = e.target.getAttribute("data-link-id");
-                const linkName = e.target.getAttribute("data-link-name");
-                // MỞ MODAL CẤU HÌNH
-                openConfigModal(linkId, linkName);
-              };
+              el.innerHTML = `
+                <h4 class="font-bold text-lg text-blue-700">${link.name}</h4>
+                <p class="text-sm text-gray-600 break-words">${link.targetUrl}</p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <button 
+                        onclick="window.openConfigModal('${link.id}', '${safeName}')"
+                        class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 rounded-lg transition duration-200 text-sm flex-grow sm:flex-grow-0">
+                        <ion-icon name="key-outline" class="mr-1 align-middle"></ion-icon>
+                        Tạo Key
+                    </button>
+                    <button 
+                        onclick="window.openEditLinkModal('${link.id}', '${safeName}', '${safeUrl}')"
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-3 rounded-lg transition duration-200 text-sm flex-grow sm:flex-grow-0">
+                        <ion-icon name="create-outline" class="mr-1 align-middle"></ion-icon>
+                        Sửa
+                    </button>
+                    <button 
+                        onclick="window.openConfirmDelete('${link.id}', 'link')"
+                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg transition duration-200 text-sm flex-grow sm:flex-grow-0">
+                        <ion-icon name="trash-outline" class="mr-1 align-middle"></ion-icon>
+                        Xóa
+                    </button>
+                </div>
+              `;
+              linksList.appendChild(el);
             });
           },
           (error) => {
@@ -464,7 +986,7 @@
           }
         );
 
-        // Gắn listener cho 'keys'
+        // 2. Gắn listener cho 'keys'
         const keysRef = ref(db, keysPath);
         onValue(
           keysRef,
@@ -472,11 +994,12 @@
             if (!snapshot.exists()) {
               keysList.innerHTML =
                 '<p class="text-gray-500">Chưa tạo key nào.</p>';
+              allKeysData = {}; // Xóa cache
               return;
             }
 
-            const data = snapshot.val();
-            let keys = Object.entries(data).map(([id, value]) => ({
+            allKeysData = snapshot.val(); // Cập nhật cache
+            let keys = Object.entries(allKeysData).map(([id, value]) => ({
               id,
               ...value,
             }));
@@ -487,73 +1010,44 @@
               const el = document.createElement("div");
               el.className = "bg-gray-50 p-3 rounded-lg border";
 
-              // Logic hiển thị trạng thái key mới
-              let statusText = "";
-              let statusClass = "";
-              const userCount = key.allowedUsers
-                ? Object.keys(key.allowedUsers).length
-                : 0;
+              // Logic hiển thị trạng thái key
+              const { statusText, statusClass } = getKeyStatus(key);
 
-              // Xử lý key cũ (không có 'mode')
-              if (!key.mode && key.status === "new") {
-                key.mode = "single_use";
-                key.status = "active";
-              } else if (!key.mode && key.status === "used") {
-                key.mode = "single_use";
-              }
+              // Tên link, fallback nếu link bị xóa
+              const linkName =
+                (allLinksData[key.linkId] && allLinksData[key.linkId].name) ||
+                key.linkName ||
+                "Link đã bị xóa";
 
-              switch (key.mode) {
-                case "single_use":
-                  if (key.status === "used") {
-                    statusText = "1 Lần (Đã dùng)";
-                    statusClass = "text-red-500 line-through";
-                  } else {
-                    statusText = "1 Lần (Mới)";
-                    statusClass = "text-green-500 font-bold";
-                  }
-                  break;
-                case "limited_users":
-                  if (key.status === "full") {
-                    statusText = `Giới Hạn (ĐẦY ${userCount}/${key.maxUses})`;
-                    statusClass = "text-red-500 font-bold";
-                  } else {
-                    statusText = `Giới Hạn (${userCount}/${key.maxUses} người)`;
-                    statusClass = "text-blue-500 font-bold";
-                  }
-                  break;
-                case "permanent_user":
-                  if (key.status === "claimed") {
-                    const ownerId =
-                      userCount > 0 ? Object.keys(key.allowedUsers)[0] : "...";
-                    statusText = `Vĩnh Viễn (Claimed: ...${ownerId.slice(-6)})`;
-                    statusClass = "text-purple-600 font-bold";
-                  } else {
-                    statusText = "Vĩnh Viễn (Chưa claim)";
-                    statusClass = "text-purple-400";
-                  }
-                  break;
-                default:
-                  statusText = "Không rõ";
-                  statusClass = "text-gray-400";
-              }
-
-              // *** BẮT ĐẦU THAY ĐỔI ***
-              // Thêm class "cursor-pointer hover:text-blue-600" và "onclick"
               el.innerHTML = `
-                        <p 
-                          class="font-mono text-sm text-blue-800 break-all cursor-pointer hover:text-blue-600 transition-colors"
-                          onclick="window.copyKeyFromHistory('${key.id}', this)"
-                          title="Nhấn để sao chép link key"
-                        >
-                          ${key.id}
-                        </p>
-                        <p class="text-sm text-gray-600">Cho: ${
-                          key.linkName || "Link không rõ"
-                        }</p>
-                        <p class="text-sm ${statusClass}">Trạng thái: ${statusText}</p>
-                    `;
-              // *** KẾT THÚC THAY ĐỔI ***
-
+                <p 
+                  class="font-mono text-sm text-blue-800 break-all cursor-pointer hover:text-blue-600 transition-colors"
+                  onclick="window.copyKeyFromHistory('${key.id}', this)"
+                  title="Nhấn để sao chép link key"
+                >
+                  ${key.id}
+                </p>
+                <p class="text-sm text-gray-600">Cho: ${linkName}</p>
+                <p 
+                  class="text-sm ${statusClass} cursor-pointer hover:underline"
+                  onclick="window.openKeyStatsModal('${key.id}')"
+                  title="Nhấn để xem chi tiết key"
+                >
+                  Trạng thái: ${statusText} (Click: ${key.totalClicks || 0})
+                </p>
+                <div class="mt-2 flex flex-wrap gap-2">
+                    <button 
+                        onclick="window.openEditKeyModal('${key.id}')"
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-2 rounded text-xs">
+                        Sửa
+                    </button>
+                    <button 
+                        onclick="window.openConfirmDelete('${key.id}', 'key')"
+                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs">
+                        Xóa
+                    </button>
+                </div>
+              `;
               keysList.appendChild(el);
             });
           },
@@ -564,13 +1058,18 @@
           }
         );
 
-        // Gắn listener cho form "Thêm Link"
+        // 3. Gắn listener cho các form
         addLinkForm.onsubmit = handleAddLink;
-
-        // Gắn listener cho form "Cấu hình Key" (MỚI)
         configForm.onsubmit = handleGenerateKeyConfirm;
+        editLinkForm.onsubmit = handleEditLink;
+        editKeyForm.onsubmit = handleEditKey;
+        resetKeyBtn.onclick = () => {
+          const keyId = editKeyIdInput.value;
+          handleResetKey(keyId);
+        };
+        confirmDeleteBtn.onclick = handleConfirmDelete; // Gắn 1 lần
 
-        // Gắn listener cho radio buttons (MỚI)
+        // 4. Gắn listener cho radio buttons (MỚI)
         document.querySelectorAll('input[name="keyMode"]').forEach((radio) => {
           radio.onchange = (e) => {
             if (e.target.value === "limited_users") {
@@ -582,7 +1081,9 @@
         });
       }
 
-      // Hàm xử lý thêm link mới
+      // ---- LOGIC XỬ LÝ LINK (CRUD) ----
+
+      // C: Thêm link mới
       async function handleAddLink(e) {
         e.preventDefault();
         const name = linkNameInput.value.trim();
@@ -600,20 +1101,91 @@
           targetUrlInput.value = "";
         } catch (error) {
           console.error("Lỗi khi thêm link: ", error);
-          alert("Đã xảy ra lỗi khi thêm link.");
         }
       }
 
-      // MỞ MODAL CẤU HÌNH KEY (MỚI)
-      function openConfigModal(linkId, linkName) {
-        configLinkName.textContent = linkName;
-        configLinkIdInput.value = linkId;
-        configForm.reset(); // Reset form về default
-        keyLimitGroup.style.display = "none";
-        configModal.style.display = "flex";
+      // R: Mở modal sửa link
+      window.openEditLinkModal = (linkId, safeName, safeUrl) => {
+        // Unescape CSS-escaped strings
+        const name = safeName.replace(/\\/g, "");
+        const url = safeUrl.replace(/\\/g, "");
+
+        editLinkIdInput.value = linkId;
+        editLinkNameInput.value = name;
+        editTargetUrlInput.value = url;
+        editLinkModal.style.display = "flex";
+      };
+
+      // U: Sửa link
+      async function handleEditLink(e) {
+        e.preventDefault();
+        const linkId = editLinkIdInput.value;
+        const name = editLinkNameInput.value.trim();
+        const targetUrl = editTargetUrlInput.value.trim();
+
+        if (!linkId || !name || !targetUrl) return;
+
+        try {
+          const linkRef = ref(db, `${linksPath}/${linkId}`);
+          await update(linkRef, {
+            name: name,
+            targetUrl: targetUrl,
+          });
+          closeModal("edit-link-modal");
+        } catch (error) {
+          console.error("Lỗi khi sửa link: ", error);
+        }
       }
 
-      // XÁC NHẬN TẠO KEY TỪ MODAL (MỚI)
+      // D: Mở modal xác nhận xóa
+      window.openConfirmDelete = (id, type) => {
+        if (type === "link") {
+          confirmMessage.textContent =
+            "Xóa link này sẽ khiến tất cả các key liên quan đến nó bị lỗi. Bạn có chắc không?";
+        } else {
+          confirmMessage.textContent =
+            "Bạn có chắc muốn xóa key này? Hành động này không thể hoàn tác.";
+        }
+        // Lưu lại thông tin để hàm confirm sử dụng
+        confirmDeleteBtn.dataset.deleteId = id;
+        confirmDeleteBtn.dataset.deleteType = type;
+        confirmModal.style.display = "flex";
+      };
+
+      // D: Xác nhận xóa
+      async function handleConfirmDelete() {
+        const id = confirmDeleteBtn.dataset.deleteId;
+        const type = confirmDeleteBtn.dataset.deleteType;
+        if (!id || !type) return;
+
+        let itemRef;
+        if (type === "link") {
+          itemRef = ref(db, `${linksPath}/${id}`);
+        } else {
+          itemRef = ref(db, `${keysPath}/${id}`);
+        }
+
+        try {
+          await remove(itemRef);
+          closeModal("confirm-modal");
+        } catch (error) {
+          console.error(`Lỗi khi xóa ${type}: `, error);
+        }
+      }
+
+      // ---- LOGIC XỬ LÝ KEY (CRUD) ----
+
+      // C: Mở modal cấu hình key
+      window.openConfigModal = (linkId, safeName) => {
+        const linkName = safeName.replace(/\\/g, "");
+        configLinkName.textContent = linkName;
+        configLinkIdInput.value = linkId;
+        configForm.reset();
+        keyLimitGroup.style.display = "none";
+        configModal.style.display = "flex";
+      };
+
+      // C: Xác nhận tạo key
       async function handleGenerateKeyConfirm(e) {
         e.preventDefault();
         const linkId = configLinkIdInput.value;
@@ -625,10 +1197,11 @@
         let config = {
           mode: mode,
           linkId: linkId,
-          linkName: linkName,
-          status: "active", // Trạng thái mới là 'active'
+          linkName: linkName, // Lưu tên link để dự phòng
+          status: "active",
           createdAt: rtdbServerTimestamp(),
-          allowedUsers: null, // Khởi tạo là null
+          allowedUsers: null,
+          totalClicks: 0, // Khởi tạo click
         };
 
         if (mode === "limited_users") {
@@ -636,12 +1209,10 @@
         }
 
         try {
-          // Tạo key ngẫu nhiên
           const randomKey = Math.random().toString(36).substring(2, 12);
           const keyRef = ref(db, `${keysPath}/${randomKey}`);
           await set(keyRef, config);
 
-          // Hiển thị modal link đã tạo
           closeModal("generate-key-config-modal");
           const redeemLink = `${window.location.origin}${window.location.pathname}#redeem?key=${randomKey}`;
           generatedKeyLinkInput.value = redeemLink;
@@ -649,16 +1220,163 @@
           copySuccessText.style.display = "none";
         } catch (error) {
           console.error("Lỗi khi tạo key: ", error);
-          alert("Đã xảy ra lỗi khi tạo key.");
         }
       }
 
-      // ---- LOGIC CHO TRANG REDEEM (ĐÃ CẬP NHẬT HOÀN TOÀN) ----
+      // R: Mở modal thống kê key
+      window.openKeyStatsModal = (keyId) => {
+        const key = allKeysData[keyId];
+        if (!key) return;
 
-      // Hàm trợ giúp chuyển hướng
-      async function redirectToTarget(linkId) {
+        const { statusText, statusClass } = getKeyStatus(key);
+        const linkName =
+          (allLinksData[key.linkId] && allLinksData[key.linkId].name) ||
+          key.linkName ||
+          "Link đã bị xóa";
+        const userCount = key.allowedUsers
+          ? Object.keys(key.allowedUsers).length
+          : 0;
+
+        statsKeyId.textContent = keyId;
+        statsKeyLinkName.textContent = linkName;
+        statsKeyCreatedAt.textContent = formatTimestamp(key.createdAt);
+        statsKeyTotalClicks.textContent = key.totalClicks || 0;
+        statsKeyUserCount.textContent = `${userCount} người`;
+
+        // Xử lý loại key và trạng thái
+        let modeText = "Không rõ";
+        if (key.mode === "single_use") modeText = "1 Lần Dùng";
+        else if (key.mode === "limited_users")
+          modeText = `Giới Hạn (${key.maxUses} người)`;
+        else if (key.mode === "permanent_user")
+          modeText = "Vĩnh Viễn (1 người)";
+        statsKeyMode.textContent = modeText;
+
+        statsKeyStatus.textContent = statusText;
+        statsKeyStatus.className = `font-bold py-1 px-2 rounded ${statusClass.replace(
+          "text-",
+          "bg-"
+        )} ${statusClass.includes("red") ? "text-white" : "text-gray-800"}`; // Tùy chỉnh màu
+
+        // Chi tiết giới hạn
+        if (key.mode === "limited_users") {
+          statsKeyMaxUses.textContent = `${userCount} / ${key.maxUses}`;
+          statsKeyLimitDetails.style.display = "block";
+        } else {
+          statsKeyLimitDetails.style.display = "none";
+        }
+
+        // Danh sách người dùng
+        if (userCount > 0) {
+          statsKeyUserList.innerHTML = "";
+          Object.entries(key.allowedUsers).forEach(([uid, timestamp]) => {
+            const userEl = document.createElement("div");
+            userEl.className = "bg-white p-2 rounded border";
+            userEl.innerHTML = `
+              <p class="text-sm font-mono">ID: ${uid}</p>
+              <p class="text-xs text-gray-600">Lúc: ${formatTimestamp(
+                timestamp
+              )}</p>
+            `;
+            statsKeyUserList.appendChild(userEl);
+          });
+        } else {
+          statsKeyUserList.innerHTML =
+            '<p class="text-gray-500">Chưa có ai sử dụng key này.</p>';
+        }
+
+        keyStatsModal.style.display = "flex";
+      };
+
+      // U: Mở modal sửa key
+      window.openEditKeyModal = (keyId) => {
+        const key = allKeysData[keyId];
+        if (!key) return;
+
+        const linkName =
+          (allLinksData[key.linkId] && allLinksData[key.linkId].name) ||
+          key.linkName ||
+          "Link đã bị xóa";
+
+        editKeyIdInput.value = keyId;
+        editKeyIdDisplay.textContent = keyId;
+        editKeyLinkName.textContent = linkName;
+
+        if (key.mode === "limited_users") {
+          editKeyLimitGroup.style.display = "block";
+          editKeyLimitInput.value = key.maxUses || 1;
+        } else {
+          editKeyLimitGroup.style.display = "none";
+          editKeyLimitInput.value = 1;
+        }
+
+        editKeyModal.style.display = "flex";
+      };
+
+      // U: Sửa key
+      async function handleEditKey(e) {
+        e.preventDefault();
+        const keyId = editKeyIdInput.value;
+        if (!keyId) return;
+
+        const keyRef = ref(db, `${keysPath}/${keyId}`);
+        const keyData = allKeysData[keyId];
+        let updates = {};
+
+        if (keyData.mode === "limited_users") {
+          const newMaxUses = parseInt(editKeyLimitInput.value, 10);
+          if (newMaxUses > 0) {
+            updates.maxUses = newMaxUses;
+            // Cập nhật lại status nếu cần
+            const userCount = keyData.allowedUsers
+              ? Object.keys(keyData.allowedUsers).length
+              : 0;
+            if (userCount < newMaxUses && keyData.status === "full") {
+              updates.status = "active";
+            }
+          }
+        }
+
         try {
-          const linkRef = ref(db, `${linksPath}/${linkId}`);
+          if (Object.keys(updates).length > 0) {
+            await update(keyRef, updates);
+          }
+          closeModal("edit-key-modal");
+        } catch (error) {
+          console.error("Lỗi khi sửa key: ", error);
+        }
+      }
+
+      // U: Reset key
+      async function handleResetKey(keyId) {
+        if (!keyId) return;
+
+        const keyRef = ref(db, `${keysPath}/${keyId}`);
+        try {
+          // Đặt lại trạng thái, xóa người dùng, giữ nguyên click
+          await update(keyRef, {
+            status: "active",
+            allowedUsers: null,
+            usedBy: null,
+            usedAt: null,
+          });
+          closeModal("edit-key-modal");
+        } catch (error) {
+          console.error("Lỗi khi reset key: ", error);
+        }
+      }
+
+      // ---- LOGIC CHO TRANG REDEEM (CẬP NHẬT) ----
+
+      // Hàm trợ giúp chuyển hướng VÀ đếm click
+      async function redirectToTarget(keyRef, keyData) {
+        try {
+          // Tăng lượt click
+          await update(keyRef, {
+            totalClicks: (keyData.totalClicks || 0) + 1,
+          });
+
+          const linkRef = ref(db, `${linksPath}/${keyData.linkId}`);
           const linkSnapshot = await get(linkRef);
           if (linkSnapshot.exists()) {
             const targetUrl = linkSnapshot.val().targetUrl;
@@ -675,12 +1393,12 @@
             redeemLoader.style.display = "none";
           }
         } catch (e) {
-          redeemMessage.textContent = "Lỗi khi lấy link gốc.";
+          redeemMessage.textContent = "Lỗi khi lấy link gốc hoặc đếm click.";
           redeemLoader.style.display = "none";
         }
       }
 
-      // Hàm xử lý redeem key chính (ĐÃ VIẾT LẠI)
+      // Hàm xử lý redeem key chính
       async function handleRedeemKey(key) {
         if (!key || !userId) {
           redeemMessage.textContent =
@@ -690,7 +1408,7 @@
         }
 
         const keyRef = ref(db, `${keysPath}/${key}`);
-        const currentUserId = userId; // Lấy userId đã đăng nhập
+        const currentUserId = userId;
 
         try {
           const keySnapshot = await get(keyRef);
@@ -703,67 +1421,57 @@
 
           const keyData = keySnapshot.val();
 
-          // --- Xử lý các key đã hết hạn ---
+          // Lấy danh sách user đã dùng
+          const allowedUsers = keyData.allowedUsers || {};
+          const isCurrentUserAllowed = allowedUsers[currentUserId];
+          const userCount = Object.keys(allowedUsers).length;
+
+          // TH1: Người dùng cũ quay lại (áp dụng cho limited và permanent)
+          if (isCurrentUserAllowed) {
+            await redirectToTarget(keyRef, keyData); // Đếm click
+            return;
+          }
+
+          // --- Xử lý các key đã hết hạn (cho người dùng MỚI) ---
           if (
             keyData.status === "used" ||
             keyData.status === "full" ||
+            keyData.status === "claimed" || // Key Vĩnh viễn đã có chủ
             keyData.status === "expired"
           ) {
-            // Kiểm tra xem người này có trong danh sách 'allowed' không (cho key limited/permanent)
-            if (keyData.allowedUsers && keyData.allowedUsers[currentUserId]) {
-              // Người dùng cũ quay lại
-              await redirectToTarget(keyData.linkId);
-              return;
-            }
             redeemMessage.textContent = "Key này đã hết lượt sử dụng.";
             redeemLoader.style.display = "none";
             return;
           }
 
-          // --- Xử lý các key CÒN HẠN (active hoặc new) ---
-
-          // Lấy danh sách user đã dùng
-          const allowedUsers = keyData.allowedUsers || {};
-          const isCurrentUserAllowed = allowedUsers[currentUserId] === true;
-          const userCount = Object.keys(allowedUsers).length;
-
-          // TH1: Người dùng cũ quay lại (áp dụng cho limited và permanent)
-          if (isCurrentUserAllowed) {
-            await redirectToTarget(keyData.linkId);
-            return;
-          }
-
-          // TH2: Người dùng mới
+          // TH2: Người dùng mới (key còn hạn)
           let mode = keyData.mode;
-
-          // Xử lý key cũ (không có mode)
           if (!mode && keyData.status === "new") {
             mode = "single_use";
           }
 
           switch (mode) {
             case "single_use":
-              // Đánh dấu key là 'used'
               await update(keyRef, {
                 status: "used",
                 usedAt: rtdbServerTimestamp(),
                 usedBy: currentUserId,
+                allowedUsers: { [currentUserId]: rtdbServerTimestamp() }, // Lưu lại user
               });
-              await redirectToTarget(keyData.linkId);
+              await redirectToTarget(keyRef, keyData);
               break;
 
             case "permanent_user":
               // Đây là người mới, kiểm tra xem key đã bị claim chưa
               if (userCount === 0) {
-                // Đây là người ĐẦU TIÊN claim
                 const updates = {};
-                updates[`allowedUsers/${currentUserId}`] = true; // Thêm user
-                updates["status"] = "claimed"; // Đánh dấu đã claim
-
+                updates[`allowedUsers/${currentUserId}`] =
+                  rtdbServerTimestamp();
+                updates["status"] = "claimed";
                 await update(keyRef, updates);
-                await redirectToTarget(keyData.linkId);
+                await redirectToTarget(keyRef, keyData);
               } else {
-                // Key đã bị claim bởi người khác
+                // (Lý thuyết không vào đây vì đã check 'claimed' ở trên)
                 redeemMessage.textContent =
                   "Key này đã được sở hữu vĩnh viễn bởi người dùng khác.";
                 redeemLoader.style.display = "none";
@@ -771,21 +1479,17 @@
               break;
 
             case "limited_users":
-              // Đây là người mới, kiểm tra xem còn slot không
               if (userCount < keyData.maxUses) {
-                // Vẫn còn slot
                 const updates = {};
-                updates[`allowedUsers/${currentUserId}`] = true; // Thêm user
-
-                // Nếu đây là user cuối cùng, set status là 'full'
+                updates[`allowedUsers/${currentUserId}`] =
+                  rtdbServerTimestamp();
                 if (userCount + 1 === keyData.maxUses) {
                   updates["status"] = "full";
                 }
-
                 await update(keyRef, updates);
-                await redirectToTarget(keyData.linkId);
+                await redirectToTarget(keyRef, keyData);
               } else {
-                // Hết slot
+                await update(keyRef, { status: "full" }); // Cập nhật lại phòng hờ
                 redeemMessage.textContent = `Key đã đạt giới hạn tối đa ${keyData.maxUses} người dùng.`;
                 redeemLoader.style.display = "none";
               }
@@ -803,61 +1507,137 @@
         }
       }
 
-      // ---- HÀM HỖ TRỢ (Modal, Copy) ----
+      // ---- LOGIC TRANG THỐNG KÊ ----
 
-      /**
-       * HÀM MỚI: Sao chép link key từ danh sách lịch sử
-       * @param {string} key - The key ID (ví dụ: 'abc123xyz')
-       * @param {HTMLElement} element - Element đã click để hiển thị feedback
-       */
-      window.copyKeyFromHistory = (key, element) => {
-        const redeemLink = `${window.location.origin}${window.location.pathname}#redeem?key=${key}`;
+      // Hàm lấy text trạng thái key (dùng chung)
+      function getKeyStatus(key) {
+        let statusText = "Không rõ";
+        let statusClass = "text-gray-400";
+        const userCount = key.allowedUsers
+          ? Object.keys(key.allowedUsers).length
+          : 0;
 
-        if (!navigator.clipboard) {
-          alert("Trình duyệt không hỗ trợ tự động sao chép.");
-          return;
+        // Xử lý key cũ (không có 'mode')
+        if (!key.mode && key.status === "new") {
+          key.mode = "single_use";
+          key.status = "active";
+        } else if (!key.mode && key.status === "used") {
+          key.mode = "single_use";
         }
 
-        navigator.clipboard
-          .writeText(redeemLink)
-          .then(() => {
-            // Hiển thị feedback
-            const originalText = element.innerText;
-            element.innerText = "Đã sao chép link!";
-            element.classList.remove("text-blue-800", "hover:text-blue-600");
-            element.classList.add("text-green-600", "font-bold");
+        switch (key.mode) {
+          case "single_use":
+            if (key.status === "used") {
+              statusText = "1 Lần (Đã dùng)";
+              statusClass = "text-red-500 line-through";
+            } else {
+              statusText = "1 Lần (Mới)";
+              statusClass = "text-green-500 font-bold";
+            }
+            break;
+          case "limited_users":
+            if (key.status === "full" || userCount >= (key.maxUses || 1)) {
+              statusText = `Giới Hạn (ĐẦY ${userCount}/${key.maxUses})`;
+              statusClass = "text-red-500 font-bold";
+            } else {
+              statusText = `Giới Hạn (${userCount}/${key.maxUses} người)`;
+              statusClass = "text-blue-500 font-bold";
+            }
+            break;
+          case "permanent_user":
+            if (key.status === "claimed") {
+              const ownerId =
+                userCount > 0 ? Object.keys(key.allowedUsers)[0] : "...";
+              statusText = `Vĩnh Viễn (Đã claim)`;
+              statusClass = "text-purple-600 font-bold";
+            } else {
+              statusText = "Vĩnh Viễn (Chưa claim)";
+              statusClass = "text-purple-400";
+            }
+            break;
+          default:
+            statusText = key.status || "Không rõ";
+            statusClass = "text-gray-400";
+        }
+        return { statusText, statusClass };
+      }
 
-            // Quay lại trạng thái cũ
-            setTimeout(() => {
-              element.innerText = originalText;
-              element.classList.remove("text-green-600", "font-bold");
-              element.classList.add("text-blue-800", "hover:text-blue-600");
-            }, 1500);
-          })
-          .catch((err) => {
-            console.error("Không thể sao chép: ", err);
-            alert("Lỗi khi sao chép.");
+      // Hàm cập nhật view thống kê
+      function updateStatsView() {
+        const links = Object.values(allLinksData);
+        const keys = Object.values(allKeysData);
+
+        // 1. Thống kê tổng quan
+        statsTotalLinks.textContent = links.length;
+        statsTotalKeys.textContent = keys.length;
+        const totalClicks = keys.reduce(
+          (sum, key) => sum + (key.totalClicks || 0),
+          0
+        );
+        statsTotalClicks.textContent = totalClicks;
+
+        // 2. Thống kê Top 5 Link
+        const linkClicks = {};
+        keys.forEach((key) => {
+          const linkId = key.linkId;
+          if (linkId) {
+            if (!linkClicks[linkId]) {
+              linkClicks[linkId] = 0;
+            }
+            linkClicks[linkId] += key.totalClicks || 0;
+          }
+        });
+
+        const sortedLinks = Object.entries(linkClicks)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 5);
+
+        if (sortedLinks.length === 0) {
+          statsTopLinks.innerHTML =
+            '<p class="text-gray-500">Chưa có dữ liệu click.</p>';
+        } else {
+          statsTopLinks.innerHTML = "";
+          sortedLinks.forEach(([linkId, clicks], index) => {
+            const linkName =
+              (allLinksData[linkId] && allLinksData[linkId].name) ||
+              "Link không rõ";
+            const el = document.createElement("div");
+            el.className = "flex justify-between items-center";
+            el.innerHTML = `
+              <p class="truncate">
+                <span class="font-bold mr-2">${index + 1}.</span>
+                ${linkName}
+              </p>
+              <p class="font-bold text-blue-600">${clicks} clicks</p>
+            `;
+            statsTopLinks.appendChild(el);
           });
-      };
-
-      // Gán hàm vào window để HTML có thể gọi
-      window.closeModal = (modalId) => {
-        document.getElementById(modalId).style.display = "none";
-      };
-
-      window.copyKeyLink = () => {
-        generatedKeyLinkInput.select();
-        try {
-          document.execCommand("copy");
-          copySuccessText.style.display = "block";
-          setTimeout(() => {
-            copySuccessText.style.display = "none";
-          }, 2000);
-        } catch (err) {
-          console.error("Không thể sao chép: ", err);
-          alert("Không thể sao chép tự động. Vui lòng sao chép thủ công.");
         }
-      };
+
+        // 3. Thống kê Top 5 Key
+        const sortedKeys = keys
+          .sort((a, b) => (b.totalClicks || 0) - (a.totalClicks || 0))
+          .slice(0, 5);
+
+        if (sortedKeys.length === 0 || sortedKeys[0].totalClicks === 0) {
+          statsTopKeys.innerHTML =
+            '<p class="text-gray-500">Chưa có dữ liệu click.</p>';
+        } else {
+          statsTopKeys.innerHTML = "";
+          sortedKeys.forEach((key, index) => {
+            const el = document.createElement("div");
+            el.className = "flex justify-between items-center";
+            el.innerHTML = `
+              <p class="font-mono text-sm truncate">
+                <span class="font-bold mr-2 text-gray-800">${index + 1}.</span>
+                ${key.id}
+              </p>
+              <p class="font-bold text-green-600">${key.totalClicks} clicks</p>
+            `;
+            statsTopKeys.appendChild(el);
+          });
+        }
+      }
 
       // ---- CHẠY ỨNG DỤNG ----
       loadingView.style.display = "flex";
