@@ -2,10 +2,8 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <!-- Sửa lỗi gõ 'UTF-R' thành 'UTF-8' -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Key</title>
-    <!-- Đổi title -->
+    <title>Đang tải...</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script
       type="module"
@@ -913,6 +911,8 @@
           redeemView.style.display = "flex";
           handleRedeemKey(hash.split("key=")[1]);
         } else {
+          // Trả lại title mặc định khi vào trang Admin
+          document.title = "Hệ Thống Quản Lý Key";
           loadingView.style.display = "none";
           adminView.style.display = "block";
           redeemView.style.display = "none";
@@ -1379,7 +1379,15 @@
           const linkRef = ref(db, `${linksPath}/${keyData.linkId}`);
           const linkSnapshot = await get(linkRef);
           if (linkSnapshot.exists()) {
-            const targetUrl = linkSnapshot.val().targetUrl;
+            const linkVal = linkSnapshot.val(); // Lấy giá trị object
+            const targetUrl = linkVal.targetUrl;
+
+            // Cập nhật Title lần nữa bằng tên chính xác nhất từ Link gốc
+            // (Phòng trường hợp admin đã đổi tên link gốc sau khi tạo key)
+            if (linkVal.name) {
+              document.title = linkVal.name;
+            }
+
             redeemMessage.textContent =
               "Key hợp lệ! Đang chuyển hướng bạn đến link gốc...";
             redeemLoader.style.display = "none";
@@ -1420,6 +1428,11 @@
           }
 
           const keyData = keySnapshot.val();
+
+          // THÊM ĐOẠN NÀY: Cập nhật title trình duyệt ngay lập tức bằng tên link lưu trong Key
+          if (keyData.linkName) {
+            document.title = keyData.linkName;
+          }
 
           // Lấy danh sách user đã dùng
           const allowedUsers = keyData.allowedUsers || {};
