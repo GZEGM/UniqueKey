@@ -80,7 +80,10 @@
       <div
         class="text-center p-10 bg-gray-800 rounded-lg shadow-xl max-w-md mx-auto"
       >
-        <h1 class="text-3xl font-bold mb-4">Đang Kiểm Tra Key</h1>
+        <!-- Đã thêm ID redeem-title vào đây để đổi tên -->
+        <h1 id="redeem-title" class="text-3xl font-bold mb-4">
+          Đang Kiểm Tra Key
+        </h1>
         <p id="redeem-message" class="text-lg text-gray-300">
           Vui lòng chờ trong giây lát...
         </p>
@@ -649,6 +652,7 @@
       const adminView = document.getElementById("admin-view");
       const redeemView = document.getElementById("redeem-view");
       const redeemMessage = document.getElementById("redeem-message");
+      const redeemTitle = document.getElementById("redeem-title"); // MỚI: Truy cập thẻ tiêu đề
       const redeemLoader = document.getElementById("redeem-loader");
       const addLinkForm = document.getElementById("add-link-form");
       const linkNameInput = document.getElementById("link-name");
@@ -1386,6 +1390,7 @@
             // (Phòng trường hợp admin đã đổi tên link gốc sau khi tạo key)
             if (linkVal.name) {
               document.title = linkVal.name;
+              redeemTitle.textContent = linkVal.name; // CẬP NHẬT TÊN LINK LÊN MÀN HÌNH
             }
 
             redeemMessage.textContent =
@@ -1432,6 +1437,7 @@
           // THÊM ĐOẠN NÀY: Cập nhật title trình duyệt ngay lập tức bằng tên link lưu trong Key
           if (keyData.linkName) {
             document.title = keyData.linkName;
+            redeemTitle.textContent = keyData.linkName; // CẬP NHẬT TÊN LINK LÊN MÀN HÌNH
           }
 
           // Lấy danh sách user đã dùng
