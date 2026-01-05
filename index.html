@@ -92,6 +92,17 @@
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: #94a3b8;
       }
+
+      /* VIP Stats Styles */
+      .stat-card {
+        transition: transform 0.2s;
+      }
+      .stat-card:hover {
+        transform: translateY(-5px);
+      }
+      .progress-bar {
+        transition: width 1s ease-in-out;
+      }
     </style>
   </head>
   <body
@@ -203,7 +214,7 @@
             name="stats-chart-outline"
             class="mr-2 align-middle"
           ></ion-icon>
-          Thống Kê
+          Thống Kê VIP
         </button>
       </nav>
 
@@ -288,18 +299,39 @@
             <div
               class="bg-white p-6 rounded-lg shadow-lg h-full border-t-4 border-green-500 flex flex-col"
             >
-              <div class="flex justify-between items-center mb-4 pb-2 border-b">
-                <h2 class="text-xl font-bold text-gray-800 flex items-center">
-                  <ion-icon
-                    name="time"
-                    class="text-green-600 mr-2 text-2xl"
-                  ></ion-icon>
-                  Lịch Sử Key
-                </h2>
-                <span
-                  class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded"
-                  >Mới nhất trên cùng</span
-                >
+              <!-- Header và Tìm Kiếm -->
+              <div class="mb-4 pb-4 border-b">
+                <div class="flex justify-between items-center mb-4">
+                  <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                    <ion-icon
+                      name="time"
+                      class="text-green-600 mr-2 text-2xl"
+                    ></ion-icon>
+                    Danh Sách Key
+                  </h2>
+                  <span
+                    class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded"
+                    >Mới nhất trên cùng</span
+                  >
+                </div>
+
+                <!-- Tìm kiếm Key -->
+                <div class="relative">
+                  <div
+                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  >
+                    <ion-icon
+                      name="search-outline"
+                      class="text-gray-400 text-lg"
+                    ></ion-icon>
+                  </div>
+                  <input
+                    type="text"
+                    id="search-key-input"
+                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Tìm kiếm: Dán link key hoặc nhập ID..."
+                  />
+                </div>
               </div>
 
               <div
@@ -314,80 +346,113 @@
         </div>
       </div>
 
-      <!-- ==== STATS VIEW (Thống Kê) ==== -->
+      <!-- ==== STATS VIEW (Thống Kê VIP) ==== -->
       <div id="stats-view" class="hidden">
+        <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div
-            class="bg-white p-6 rounded-lg shadow-lg flex items-center space-x-4 border-l-4 border-blue-500"
+            class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white stat-card"
           >
-            <div class="p-3 bg-blue-100 rounded-full">
-              <ion-icon
-                name="link-outline"
-                class="text-3xl text-blue-600"
-              ></ion-icon>
+            <div class="flex justify-between items-center">
+              <div>
+                <p
+                  class="text-blue-100 text-sm font-medium uppercase tracking-wider"
+                >
+                  Tổng Link
+                </p>
+                <p id="stats-total-links" class="text-4xl font-bold mt-1">0</p>
+              </div>
+              <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                <ion-icon name="link-outline" class="text-3xl"></ion-icon>
+              </div>
             </div>
-            <div>
-              <p class="text-lg text-gray-500">Tổng Số Link</p>
-              <p
-                id="stats-total-links"
-                class="text-4xl font-bold text-gray-800"
-              >
-                0
-              </p>
+            <div class="mt-4 text-xs text-blue-100 opacity-80">
+              Hệ thống đang hoạt động
             </div>
           </div>
+
           <div
-            class="bg-white p-6 rounded-lg shadow-lg flex items-center space-x-4 border-l-4 border-green-500"
+            class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white stat-card"
           >
-            <div class="p-3 bg-green-100 rounded-full">
-              <ion-icon
-                name="key-outline"
-                class="text-3xl text-green-600"
-              ></ion-icon>
+            <div class="flex justify-between items-center">
+              <div>
+                <p
+                  class="text-green-100 text-sm font-medium uppercase tracking-wider"
+                >
+                  Tổng Key
+                </p>
+                <p id="stats-total-keys" class="text-4xl font-bold mt-1">0</p>
+              </div>
+              <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                <ion-icon name="key-outline" class="text-3xl"></ion-icon>
+              </div>
             </div>
-            <div>
-              <p class="text-lg text-gray-500">Tổng Số Key</p>
-              <p id="stats-total-keys" class="text-4xl font-bold text-gray-800">
-                0
-              </p>
+            <div class="mt-4 text-xs text-green-100 opacity-80">
+              Keys đã được tạo ra
             </div>
           </div>
+
           <div
-            class="bg-white p-6 rounded-lg shadow-lg flex items-center space-x-4 border-l-4 border-purple-500"
+            class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white stat-card"
           >
-            <div class="p-3 bg-purple-100 rounded-full">
-              <ion-icon
-                name="analytics-outline"
-                class="text-3xl text-purple-600"
-              ></ion-icon>
+            <div class="flex justify-between items-center">
+              <div>
+                <p
+                  class="text-purple-100 text-sm font-medium uppercase tracking-wider"
+                >
+                  Tổng Lượt Click
+                </p>
+                <p id="stats-total-clicks" class="text-4xl font-bold mt-1">0</p>
+              </div>
+              <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                <ion-icon name="analytics-outline" class="text-3xl"></ion-icon>
+              </div>
             </div>
-            <div>
-              <p class="text-lg text-gray-500">Tổng Lượt Click</p>
-              <p
-                id="stats-total-clicks"
-                class="text-4xl font-bold text-gray-800"
-              >
-                0
-              </p>
+            <div class="mt-4 text-xs text-purple-100 opacity-80">
+              Truy cập thành công
             </div>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div class="bg-white p-6 rounded-lg shadow-lg">
-            <h3 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
-              Top 5 Link Nhiều Click Nhất
-            </h3>
-            <div id="stats-top-links" class="space-y-3">
-              <p class="text-gray-500">Chưa có dữ liệu click.</p>
+        <!-- Charts / Lists -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Top Links -->
+          <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+            <div class="flex items-center justify-between mb-6 pb-2 border-b">
+              <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                <ion-icon
+                  name="trophy-outline"
+                  class="text-yellow-500 mr-2"
+                ></ion-icon>
+                Top Link Phổ Biến
+              </h3>
+              <span class="text-xs font-semibold text-gray-500 uppercase"
+                >Top 5</span
+              >
+            </div>
+            <div id="stats-top-links" class="space-y-5">
+              <!-- Content injected via JS -->
+              <p class="text-gray-500 text-center py-4">Đang tính toán...</p>
             </div>
           </div>
-          <div class="bg-white p-6 rounded-lg shadow-lg">
-            <h3 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
-              Top 5 Key Sử Dụng Nhiều Nhất
-            </h3>
-            <div id="stats-top-keys" class="space-y-3">
-              <p class="text-gray-500">Chưa có dữ liệu click.</p>
+
+          <!-- Top Keys -->
+          <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+            <div class="flex items-center justify-between mb-6 pb-2 border-b">
+              <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                <ion-icon
+                  name="flame-outline"
+                  class="text-red-500 mr-2"
+                ></ion-icon>
+                Top Key Hoạt Động
+              </h3>
+              <span class="text-xs font-semibold text-gray-500 uppercase"
+                >Top 5</span
+              >
+            </div>
+            <div id="stats-top-keys" class="space-y-4">
+              <!-- Content injected via JS -->
+              <p class="text-gray-500 text-center py-4">Đang tính toán...</p>
             </div>
           </div>
         </div>
@@ -471,7 +536,7 @@
 
         <form id="generate-key-form">
           <input type="hidden" id="config-link-id" />
-          <div class="mb-5">
+          <div class="mb-4">
             <label class="block text-gray-700 font-bold mb-3"
               >Chọn Loại Key:</label
             >
@@ -491,7 +556,8 @@
                     >1 Lần Dùng</span
                   >
                   <span class="block text-gray-500 text-xs"
-                    >Hết hạn ngay sau khi 1 người truy cập.</span
+                    >Hết hạn NGAY LẬP TỨC sau khi click. Không thể truy cập
+                    lại.</span
                   >
                 </div>
               </label>
@@ -533,6 +599,20 @@
               </label>
             </div>
           </div>
+
+          <!-- Phần Mô tả Key (Mới) -->
+          <div class="mb-4">
+            <label for="key-note" class="block text-gray-700 font-bold mb-2"
+              >Ghi chú (Tùy chọn):</label
+            >
+            <input
+              type="text"
+              id="key-note"
+              class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="VD: Gửi cho bạn Nam, Lớp 12A..."
+            />
+          </div>
+
           <div id="key-limit-group" class="mb-5 hidden animate-fade-in">
             <label
               for="key-limit-input"
@@ -646,6 +726,19 @@
             </div>
           </div>
 
+          <div class="mb-4">
+            <label
+              for="edit-key-note"
+              class="block text-gray-700 font-bold mb-2"
+              >Ghi chú:</label
+            >
+            <input
+              type="text"
+              id="edit-key-note"
+              class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           <div id="edit-key-limit-group" class="mb-4 hidden">
             <label
               for="edit-key-limit-input"
@@ -721,6 +814,18 @@
               >...</span
             >
           </p>
+          <!-- Hiển thị Note -->
+          <p
+            id="stats-key-note-container"
+            class="hidden bg-yellow-50 p-2 rounded border border-yellow-200 text-sm text-gray-700 italic"
+          >
+            <ion-icon
+              name="pencil-outline"
+              class="align-middle mr-1"
+            ></ion-icon>
+            <span id="stats-key-note"></span>
+          </p>
+
           <div class="flex gap-4 text-sm text-gray-600">
             <p>Created: <span id="stats-key-created-at">...</span></p>
             <p>
@@ -806,8 +911,6 @@
     <!-- ==== SCRIPT ==== -->
     <script type="module">
       // ⚠️ CẤU HÌNH CLOUDFLARE WORKER TẠI ĐÂY
-      // Hãy điền Link Cloudflare Worker mà bạn vừa tạo ở Bước 1 vào đây
-      // Ví dụ: const CLOUDFLARE_WORKER_URL = "https://share-key.tenban.workers.dev";
       const CLOUDFLARE_WORKER_URL = "";
 
       // Import các hàm Firebase cần thiết
@@ -850,6 +953,7 @@
       const linksList = document.getElementById("links-list");
       const keysList = document.getElementById("keys-list");
       const userIdDisplay = document.getElementById("user-id-display");
+      const searchKeyInput = document.getElementById("search-key-input"); // Input tìm kiếm
 
       // Views & Tabs
       const adminContentView = document.getElementById("admin-content");
@@ -869,6 +973,7 @@
       const configLinkIdInput = document.getElementById("config-link-id");
       const keyLimitGroup = document.getElementById("key-limit-group");
       const keyLimitInput = document.getElementById("key-limit-input");
+      const keyNoteInput = document.getElementById("key-note"); // Input Note
 
       const editLinkModal = document.getElementById("edit-link-modal");
       const editLinkForm = document.getElementById("edit-link-form");
@@ -881,6 +986,7 @@
       const editKeyIdInput = document.getElementById("edit-key-id");
       const editKeyIdDisplay = document.getElementById("edit-key-id-display");
       const editKeyLinkName = document.getElementById("edit-key-link-name");
+      const editKeyNoteInput = document.getElementById("edit-key-note"); // Edit Note
       const editKeyLimitGroup = document.getElementById("edit-key-limit-group");
       const editKeyLimitInput = document.getElementById("edit-key-limit-input");
       const resetKeyBtn = document.getElementById("reset-key-btn");
@@ -888,6 +994,10 @@
       const keyStatsModal = document.getElementById("key-stats-modal");
       const statsKeyId = document.getElementById("stats-key-id");
       const statsKeyLinkName = document.getElementById("stats-key-link-name");
+      const statsKeyNoteContainer = document.getElementById(
+        "stats-key-note-container"
+      );
+      const statsKeyNote = document.getElementById("stats-key-note");
       const statsKeyCreatedAt = document.getElementById("stats-key-created-at");
       const statsKeyMode = document.getElementById("stats-key-mode");
       const statsKeyStatus = document.getElementById("stats-key-status");
@@ -963,14 +1073,16 @@
         try {
           document.execCommand("copy");
           const originalText = element.innerText;
-          element.innerText = "Đã sao chép!";
-          element.classList.remove("text-blue-800");
-          element.classList.add("text-green-600", "font-bold");
+          // Hiệu ứng copy
+          const originalHTML = element.innerHTML;
+          element.innerHTML = `<ion-icon name="checkmark-outline" class="mr-1"></ion-icon> Copied!`;
+          element.classList.remove("text-blue-700");
+          element.classList.add("text-green-600");
 
           setTimeout(() => {
-            element.innerText = originalText;
-            element.classList.remove("text-green-600", "font-bold");
-            element.classList.add("text-blue-800");
+            element.innerHTML = originalHTML;
+            element.classList.remove("text-green-600");
+            element.classList.add("text-blue-700");
           }, 1500);
         } catch (err) {
           console.error("Copy failed", err);
@@ -1140,31 +1252,90 @@
 
         const keysRef = ref(db, keysPath);
         onValue(keysRef, (snapshot) => {
-          if (!snapshot.exists()) {
-            keysList.innerHTML =
-              '<p class="text-gray-500 text-center">Chưa tạo key nào.</p>';
-            allKeysData = {};
-            return;
-          }
-          allKeysData = snapshot.val();
-          let keys = Object.entries(allKeysData).map(([id, value]) => ({
-            id,
-            ...value,
-          }));
-          keys.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          allKeysData = snapshot.exists() ? snapshot.val() : {};
+          renderKeys(); // Render keys tách ra hàm riêng để dùng cho Search
+        });
 
-          keysList.innerHTML = "";
-          keys.forEach((key) => {
-            const el = document.createElement("div");
-            el.className =
-              "bg-white p-3 rounded-lg border shadow-sm hover:bg-gray-50 transition-colors";
-            const { statusText, statusClass } = getKeyStatus(key);
-            const linkName =
-              (allLinksData[key.linkId] && allLinksData[key.linkId].name) ||
-              key.linkName ||
-              "Link cũ/Đã xóa";
+        // Xử lý Search
+        searchKeyInput.addEventListener("input", (e) => {
+          renderKeys(e.target.value);
+        });
 
-            el.innerHTML = `
+        addLinkForm.onsubmit = handleAddLink;
+        configForm.onsubmit = handleGenerateKeyConfirm;
+        editLinkForm.onsubmit = handleEditLink;
+        editKeyForm.onsubmit = handleEditKey;
+        resetKeyBtn.onclick = () => {
+          handleResetKey(editKeyIdInput.value);
+        };
+        confirmDeleteBtn.onclick = handleConfirmDelete;
+
+        document.querySelectorAll('input[name="keyMode"]').forEach((radio) => {
+          radio.onchange = (e) => {
+            if (e.target.value === "limited_users") {
+              keyLimitGroup.style.display = "block";
+              keyLimitGroup.classList.add("animate-fade-in");
+            } else {
+              keyLimitGroup.style.display = "none";
+            }
+          };
+        });
+      }
+
+      // Hàm Render Keys (Hỗ trợ Search)
+      function renderKeys(searchTerm = "") {
+        if (Object.keys(allKeysData).length === 0) {
+          keysList.innerHTML =
+            '<p class="text-gray-500 text-center">Chưa tạo key nào.</p>';
+          return;
+        }
+
+        let keys = Object.entries(allKeysData).map(([id, value]) => ({
+          id,
+          ...value,
+        }));
+        keys.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+        // Logic Search thông minh
+        if (searchTerm) {
+          const cleanTerm = searchTerm.trim();
+          // Check nếu người dùng paste link
+          const urlMatch = cleanTerm.match(/key=([A-Z0-9]+)/i);
+          const keyword = urlMatch
+            ? urlMatch[1].toUpperCase()
+            : cleanTerm.toUpperCase();
+
+          keys = keys.filter(
+            (k) =>
+              k.id.includes(keyword) ||
+              (k.note && k.note.toUpperCase().includes(keyword))
+          );
+        }
+
+        keysList.innerHTML = "";
+        if (keys.length === 0) {
+          keysList.innerHTML =
+            '<p class="text-gray-500 text-center py-4">Không tìm thấy key phù hợp.</p>';
+          return;
+        }
+
+        keys.forEach((key) => {
+          const el = document.createElement("div");
+          el.className =
+            "bg-white p-3 rounded-lg border shadow-sm hover:bg-gray-50 transition-colors";
+          const { statusText, statusClass } = getKeyStatus(key);
+          // Sửa lỗi undefined: Dùng optional chaining và fallback
+          const linkName =
+            (allLinksData[key.linkId] && allLinksData[key.linkId].name) ||
+            key.linkName ||
+            "Link đã xóa";
+
+          // Hiển thị Note nếu có
+          const noteHtml = key.note
+            ? `<p class="text-xs text-gray-500 italic mt-1"><ion-icon name="pencil-outline" class="mr-1 align-middle"></ion-icon>${key.note}</p>`
+            : "";
+
+          el.innerHTML = `
                 <div class="flex justify-between items-start">
                     <div>
                         <p 
@@ -1177,6 +1348,7 @@
                           }
                         </p>
                         <p class="text-xs text-gray-600 mt-1">Link: <strong>${linkName}</strong></p>
+                        ${noteHtml}
                     </div>
                     <div class="text-right">
                         <span class="text-xs px-2 py-1 rounded-full ${
@@ -1211,28 +1383,7 @@
                     </div>
                 </div>
               `;
-            keysList.appendChild(el);
-          });
-        });
-
-        addLinkForm.onsubmit = handleAddLink;
-        configForm.onsubmit = handleGenerateKeyConfirm;
-        editLinkForm.onsubmit = handleEditLink;
-        editKeyForm.onsubmit = handleEditKey;
-        resetKeyBtn.onclick = () => {
-          handleResetKey(editKeyIdInput.value);
-        };
-        confirmDeleteBtn.onclick = handleConfirmDelete;
-
-        document.querySelectorAll('input[name="keyMode"]').forEach((radio) => {
-          radio.onchange = (e) => {
-            if (e.target.value === "limited_users") {
-              keyLimitGroup.style.display = "block";
-              keyLimitGroup.classList.add("animate-fade-in");
-            } else {
-              keyLimitGroup.style.display = "none";
-            }
-          };
+          keysList.appendChild(el);
         });
       }
 
@@ -1314,6 +1465,8 @@
         const linkName = configLinkName.textContent;
         const formData = new FormData(configForm);
         const mode = formData.get("keyMode");
+        const note = keyNoteInput.value.trim(); // Lấy note
+
         let config = {
           mode: mode,
           linkId: linkId,
@@ -1322,6 +1475,7 @@
           createdAt: rtdbServerTimestamp(),
           allowedUsers: null,
           totalClicks: 0,
+          note: note, // Lưu note
         };
         if (mode === "limited_users")
           config.maxUses = parseInt(keyLimitInput.value, 10) || 1;
@@ -1330,11 +1484,10 @@
           const randomKey = Math.random()
             .toString(36)
             .substring(2, 10)
-            .toUpperCase(); // Key ngắn gọn hơn, uppercase
+            .toUpperCase();
           await set(ref(db, `${keysPath}/${randomKey}`), config);
           closeModal("generate-key-config-modal");
 
-          // === PHẦN QUAN TRỌNG: CHỌN LINK ĐỂ HIỂN THỊ ===
           if (CLOUDFLARE_WORKER_URL) {
             generatedKeyLinkInput.value = `${CLOUDFLARE_WORKER_URL}?key=${randomKey}`;
           } else {
@@ -1353,9 +1506,20 @@
         if (!key) return;
         const { statusText } = getKeyStatus(key);
         statsKeyId.textContent = keyId;
+        // Fix undefined link name
         statsKeyLinkName.textContent =
           (allLinksData[key.linkId] && allLinksData[key.linkId].name) ||
-          key.linkName;
+          key.linkName ||
+          "Link đã xóa";
+
+        // Show note
+        if (key.note) {
+          statsKeyNoteContainer.style.display = "block";
+          statsKeyNote.textContent = key.note;
+        } else {
+          statsKeyNoteContainer.style.display = "none";
+        }
+
         statsKeyCreatedAt.textContent = formatTimestamp(key.createdAt);
         statsKeyTotalClicks.textContent = key.totalClicks || 0;
         statsKeyUserCount.textContent = key.allowedUsers
@@ -1401,7 +1565,11 @@
         editKeyIdDisplay.textContent = keyId;
         editKeyLinkName.textContent =
           (allLinksData[key.linkId] && allLinksData[key.linkId].name) ||
-          key.linkName;
+          key.linkName ||
+          "Link đã xóa";
+
+        editKeyNoteInput.value = key.note || ""; // Set value note
+
         if (key.mode === "limited_users") {
           editKeyLimitGroup.style.display = "block";
           editKeyLimitInput.value = key.maxUses || 1;
@@ -1416,6 +1584,10 @@
         const keyId = editKeyIdInput.value;
         const keyData = allKeysData[keyId];
         let updates = {};
+
+        // Update Note
+        updates.note = editKeyNoteInput.value.trim();
+
         if (keyData.mode === "limited_users") {
           updates.maxUses = parseInt(editKeyLimitInput.value, 10);
           const currentUsers = keyData.allowedUsers
@@ -1435,13 +1607,13 @@
           allowedUsers: null,
           usedBy: null,
           usedAt: null,
+          totalClicks: 0, // Reset clicks too if needed
         });
         closeModal("edit-key-modal");
       }
 
-      // REDEEM LOGIC (AZOTA STYLE UPDATE)
+      // REDEEM LOGIC (SỬA LẠI LOGIC 1 LẦN DÙNG)
       async function redirectToTarget(keyRef, keyData) {
-        // Cập nhật trạng thái UI thành công
         redeemLoader.style.display = "none";
         redeemMessage.innerHTML = `<span class="text-green-600 font-bold text-lg"><ion-icon name="checkmark-circle" class="align-middle"></ion-icon> Xác thực thành công!</span><br><span class="text-gray-500 text-xs">Đang chuyển đến tài liệu...</span>`;
         statusContainer.classList.remove("bg-blue-50", "border-blue-100");
@@ -1450,7 +1622,7 @@
         try {
           await update(keyRef, { totalClicks: (keyData.totalClicks || 0) + 1 });
 
-          // Lấy link gốc mới nhất (phòng khi admin đổi link)
+          // Lấy link gốc
           const linkSnapshot = await get(
             ref(db, `${linksPath}/${keyData.linkId}`)
           );
@@ -1459,15 +1631,12 @@
           if (linkSnapshot.exists()) {
             const linkVal = linkSnapshot.val();
             targetUrl = linkVal.targetUrl;
-            // Cập nhật tên lần cuối cho chắc
             if (linkVal.name) redeemTitle.textContent = linkVal.name;
           } else {
-            // Fallback nếu link gốc bị xóa trong DB nhưng key vẫn còn
             redeemMessage.innerHTML = `<span class="text-red-500">Link gốc không còn tồn tại.</span>`;
             return;
           }
 
-          // Delay một chút để người dùng nhìn thấy Card "Success" (giống Azota loading xong mới chuyển)
           setTimeout(() => {
             window.location.href = targetUrl;
           }, 2000);
@@ -1495,23 +1664,13 @@
 
           const keyData = keySnapshot.val();
 
-          // === UPDATE UI NGAY LẬP TỨC ===
-          // Đây là phần làm cho giống Azota: Hiện tên tài liệu ngay
+          // UI Update
           if (keyData.linkName) {
             document.title = keyData.linkName;
             redeemTitle.textContent = keyData.linkName;
           }
 
-          const allowedUsers = keyData.allowedUsers || {};
-          const isCurrentUserAllowed = allowedUsers[userId];
-          const userCount = Object.keys(allowedUsers).length;
-
-          // Logic kiểm tra quyền truy cập (giữ nguyên logic cũ, chỉ đổi UI text)
-          if (isCurrentUserAllowed) {
-            await redirectToTarget(keyRef, keyData);
-            return;
-          }
-
+          // === LOGIC KIỂM TRA TRẠNG THÁI ===
           if (["used", "full", "claimed", "expired"].includes(keyData.status)) {
             redeemLoader.style.display = "none";
             redeemMessage.innerHTML = `<span class="text-red-600 font-bold"><ion-icon name="alert-circle" class="align-middle"></ion-icon> Key đã hết hạn sử dụng.</span>`;
@@ -1519,43 +1678,61 @@
             return;
           }
 
-          // Xử lý người dùng mới
-          let mode =
-            keyData.mode ||
-            (keyData.status === "new" ? "single_use" : "single_use");
+          const allowedUsers = keyData.allowedUsers || {};
+          const isCurrentUserAllowed = allowedUsers[userId];
+          const userCount = Object.keys(allowedUsers).length;
+
+          // Xử lý Logic từng loại Key
+          let mode = keyData.mode || "single_use";
           let updates = {};
 
           if (mode === "single_use") {
+            // ⚠️ CẬP NHẬT QUAN TRỌNG: 1 LẦN LÀ CHẾT NGAY
+            // Bất kể ai vào, ngay lập tức set used.
+            // Nếu user load lại trang -> dính check 'used' ở trên -> block.
             updates = {
-              status: "used",
+              status: "used", // Hết hạn ngay lập tức
               usedAt: rtdbServerTimestamp(),
               usedBy: userId,
               [`allowedUsers/${userId}`]: rtdbServerTimestamp(),
             };
+            // Không check isCurrentUserAllowed ở đây nữa, vì user cũ cũng không được vào lại
+            await update(keyRef, updates);
+            await redirectToTarget(keyRef, keyData);
+            return;
           } else if (mode === "permanent_user") {
-            if (userCount === 0)
+            // Vĩnh viễn cho 1 người
+            if (isCurrentUserAllowed) {
+              await redirectToTarget(keyRef, keyData);
+              return;
+            }
+            if (userCount === 0) {
               updates = {
                 status: "claimed",
                 [`allowedUsers/${userId}`]: rtdbServerTimestamp(),
               };
-            else {
+              await update(keyRef, updates);
+              await redirectToTarget(keyRef, keyData);
+            } else {
               redeemMessage.textContent = "Key này đã có chủ sở hữu.";
               redeemLoader.style.display = "none";
-              return;
             }
           } else if (mode === "limited_users") {
+            // Giới hạn số lượng
+            if (isCurrentUserAllowed) {
+              await redirectToTarget(keyRef, keyData);
+              return;
+            }
             if (userCount < keyData.maxUses) {
               updates[`allowedUsers/${userId}`] = rtdbServerTimestamp();
               if (userCount + 1 >= keyData.maxUses) updates.status = "full";
+              await update(keyRef, updates);
+              await redirectToTarget(keyRef, keyData);
             } else {
               redeemMessage.textContent = "Key đã đủ số lượng người dùng.";
               redeemLoader.style.display = "none";
-              return;
             }
           }
-
-          await update(keyRef, updates);
-          await redirectToTarget(keyRef, keyData);
         } catch (error) {
           console.error(error);
           redeemMessage.textContent = "Lỗi kết nối Server.";
@@ -1564,7 +1741,6 @@
       }
 
       function getKeyStatus(key) {
-        // Helper function cho UI Admin
         let statusText = "Active",
           statusClass = "text-green-600";
         if (
@@ -1590,53 +1766,118 @@
       }
 
       function updateStatsView() {
-        // Logic thống kê giữ nguyên
         const links = Object.values(allLinksData);
         const keys = Object.values(allKeysData);
-        statsTotalLinks.textContent = links.length;
-        statsTotalKeys.textContent = keys.length;
-        statsTotalClicks.textContent = keys.reduce(
-          (sum, k) => sum + (k.totalClicks || 0),
-          0
+
+        // Hoạt ảnh tăng số
+        animateValue(statsTotalLinks, 0, links.length, 1000);
+        animateValue(statsTotalKeys, 0, keys.length, 1000);
+        animateValue(
+          statsTotalClicks,
+          0,
+          keys.reduce((sum, k) => sum + (k.totalClicks || 0), 0),
+          1000
         );
 
-        // Top Links
+        // --- VIP Stats: Top Links ---
         const linkClicks = {};
         keys.forEach((k) => {
           if (k.linkId)
             linkClicks[k.linkId] =
               (linkClicks[k.linkId] || 0) + (k.totalClicks || 0);
         });
+
+        // Tìm giá trị max để tính % cho progress bar
+        const maxLinkClicks = Math.max(...Object.values(linkClicks), 1); // Avoid div by 0
+
         const topLinks = Object.entries(linkClicks)
           .sort(([, a], [, b]) => b - a)
           .slice(0, 5);
+
         statsTopLinks.innerHTML = topLinks.length
           ? ""
-          : '<p class="text-gray-500">Chưa có dữ liệu.</p>';
+          : '<p class="text-gray-500 italic">Chưa có dữ liệu.</p>';
+
         topLinks.forEach(([lid, clicks], i) => {
+          // Fix lỗi undefined
           const name =
-            (allLinksData[lid] && allLinksData[lid].name) || "Unknown";
-          statsTopLinks.innerHTML += `<div class="flex justify-between py-2 border-b last:border-0"><span class="truncate w-3/4">${
-            i + 1
-          }. ${name}</span><span class="font-bold text-blue-600">${clicks}</span></div>`;
+            (allLinksData[lid] && allLinksData[lid].name) ||
+            "Link đã xóa/Unknown";
+          const percent = Math.round((clicks / maxLinkClicks) * 100);
+
+          statsTopLinks.innerHTML += `
+            <div class="relative pt-1">
+              <div class="flex mb-2 items-center justify-between">
+                <div>
+                  <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200 mr-2">
+                    #${i + 1}
+                  </span>
+                  <span class="font-semibold text-gray-700 text-sm">${name}</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-semibold inline-block text-blue-600">
+                    ${clicks} clicks
+                  </span>
+                </div>
+              </div>
+              <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-100">
+                <div style="width:${percent}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 progress-bar"></div>
+              </div>
+            </div>`;
         });
 
-        // Top Keys
+        // --- VIP Stats: Top Keys ---
         const topKeys = keys
           .sort((a, b) => (b.totalClicks || 0) - (a.totalClicks || 0))
           .slice(0, 5);
+
+        const maxKeyClicks =
+          topKeys.length > 0 ? topKeys[0].totalClicks || 1 : 1;
+
         statsTopKeys.innerHTML =
           topKeys.length && topKeys[0].totalClicks
             ? ""
-            : '<p class="text-gray-500">Chưa có dữ liệu.</p>';
+            : '<p class="text-gray-500 italic">Chưa có dữ liệu.</p>';
+
         topKeys.forEach((k, i) => {
-          if (k.totalClicks > 0)
-            statsTopKeys.innerHTML += `<div class="flex justify-between py-2 border-b last:border-0"><span class="font-mono text-sm truncate w-3/4">${
-              i + 1
-            }. ${k.id}</span><span class="font-bold text-green-600">${
-              k.totalClicks
-            }</span></div>`;
+          if (k.totalClicks > 0) {
+            const percent = Math.round((k.totalClicks / maxKeyClicks) * 100);
+            const noteText = k.note ? ` - ${k.note}` : "";
+
+            statsTopKeys.innerHTML += `
+             <div class="relative pt-1">
+              <div class="flex mb-2 items-center justify-between">
+                <div>
+                   <span class="font-mono text-xs font-bold text-gray-600 mr-2">${k.id}</span>
+                   <span class="text-xs text-gray-500 truncate max-w-[150px] inline-block align-bottom">${noteText}</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-green-600">
+                    ${k.totalClicks} clicks
+                  </span>
+                </div>
+              </div>
+               <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-green-100">
+                <div style="width:${percent}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500 progress-bar"></div>
+              </div>
+             </div>`;
+          }
         });
+      }
+
+      // Hàm chạy hiệu ứng số tăng dần
+      function animateValue(obj, start, end, duration) {
+        if (!obj) return;
+        let startTimestamp = null;
+        const step = (timestamp) => {
+          if (!startTimestamp) startTimestamp = timestamp;
+          const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+          obj.innerHTML = Math.floor(progress * (end - start) + start);
+          if (progress < 1) {
+            window.requestAnimationFrame(step);
+          }
+        };
+        window.requestAnimationFrame(step);
       }
 
       // Start
