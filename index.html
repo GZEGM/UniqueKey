@@ -3,7 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Đang tải...</title>
+    <title>Hệ Thống Quản Lý Key</title>
+    <!-- Thêm Meta Default cho trang chủ -->
+    <meta property="og:title" content="Cổng Tra Cứu Tài Liệu" />
+    <meta
+      property="og:description"
+      content="Nhập Key để truy cập tài liệu được chia sẻ."
+    />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script
       type="module"
@@ -73,6 +80,20 @@
           opacity: 1;
           transform: translateY(0);
         }
+      }
+      /* Custom scrollbar */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
       }
     </style>
   </head>
@@ -787,6 +808,11 @@
 
     <!-- ==== SCRIPT ==== -->
     <script type="module">
+      // ⚠️ CẤU HÌNH CLOUDFLARE WORKER TẠI ĐÂY
+      // Hãy điền Link Cloudflare Worker mà bạn vừa tạo ở Bước 1 vào đây
+      // Ví dụ: const CLOUDFLARE_WORKER_URL = "https://share-key.tenban.workers.dev";
+      const CLOUDFLARE_WORKER_URL = "";
+
       // Import các hàm Firebase cần thiết
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
       import {
@@ -923,8 +949,16 @@
         }
       };
 
+      // Hàm copy đã được sửa để ưu tiên dùng link Worker nếu có
       window.copyKeyFromHistory = (key, element) => {
-        const redeemLink = `${window.location.origin}${window.location.pathname}#redeem?key=${key}`;
+        let redeemLink;
+        if (CLOUDFLARE_WORKER_URL) {
+          // Nếu có Worker, tạo link qua Worker
+          redeemLink = `${CLOUDFLARE_WORKER_URL}?key=${key}`;
+        } else {
+          redeemLink = `${window.location.origin}${window.location.pathname}#redeem?key=${key}`;
+        }
+
         const input = document.createElement("textarea");
         input.value = redeemLink;
         document.body.appendChild(input);
@@ -1302,7 +1336,14 @@
             .toUpperCase(); // Key ngắn gọn hơn, uppercase
           await set(ref(db, `${keysPath}/${randomKey}`), config);
           closeModal("generate-key-config-modal");
-          generatedKeyLinkInput.value = `${window.location.origin}${window.location.pathname}#redeem?key=${randomKey}`;
+
+          // === PHẦN QUAN TRỌNG: CHỌN LINK ĐỂ HIỂN THỊ ===
+          if (CLOUDFLARE_WORKER_URL) {
+            generatedKeyLinkInput.value = `${CLOUDFLARE_WORKER_URL}?key=${randomKey}`;
+          } else {
+            generatedKeyLinkInput.value = `${window.location.origin}${window.location.pathname}#redeem?key=${randomKey}`;
+          }
+
           generatedKeyModal.style.display = "flex";
           copySuccessText.style.display = "none";
         } catch (error) {
