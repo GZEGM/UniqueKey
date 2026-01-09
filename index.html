@@ -910,9 +910,6 @@
 
     <!-- ==== SCRIPT ==== -->
     <script type="module">
-      // ⚠️ CẤU HÌNH CLOUDFLARE WORKER TẠI ĐÂY
-      const CLOUDFLARE_WORKER_URL = "";
-
       // Import các hàm Firebase cần thiết
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
       import {
@@ -1056,15 +1053,11 @@
         }
       };
 
-      // Hàm copy đã được sửa để ưu tiên dùng link Worker nếu có
+      // Hàm copy ĐÃ LOẠI BỎ Worker và FIX lỗi URL
       window.copyKeyFromHistory = (key, element) => {
-        let redeemLink;
-        if (CLOUDFLARE_WORKER_URL) {
-          // Nếu có Worker, tạo link qua Worker
-          redeemLink = `${CLOUDFLARE_WORKER_URL}?key=${key}`;
-        } else {
-          redeemLink = `${window.location.origin}${window.location.pathname}#redeem?key=${key}`;
-        }
+        // Lấy URL gốc an toàn hơn
+        const baseUrl = window.location.href.split("#")[0];
+        const redeemLink = `${baseUrl}#redeem?key=${key}`;
 
         const input = document.createElement("textarea");
         input.value = redeemLink;
@@ -1072,9 +1065,8 @@
         input.select();
         try {
           document.execCommand("copy");
-          const originalText = element.innerText;
-          // Hiệu ứng copy
           const originalHTML = element.innerHTML;
+          // Hiệu ứng copy
           element.innerHTML = `<ion-icon name="checkmark-outline" class="mr-1"></ion-icon> Copied!`;
           element.classList.remove("text-blue-700");
           element.classList.add("text-green-600");
@@ -1201,6 +1193,8 @@
             linksList.innerHTML =
               '<p class="text-gray-500 text-center">Chưa có link nào.</p>';
             allLinksData = {};
+            // FIX RACE CONDITION: Render key lại ngay khi có dữ liệu link
+            renderKeys();
             return;
           }
           allLinksData = snapshot.val();
@@ -1248,6 +1242,8 @@
               `;
             linksList.appendChild(el);
           });
+          // FIX RACE CONDITION: Render key lại sau khi có dữ liệu link
+          renderKeys();
         });
 
         const keysRef = ref(db, keysPath);
@@ -1488,11 +1484,9 @@
           await set(ref(db, `${keysPath}/${randomKey}`), config);
           closeModal("generate-key-config-modal");
 
-          if (CLOUDFLARE_WORKER_URL) {
-            generatedKeyLinkInput.value = `${CLOUDFLARE_WORKER_URL}?key=${randomKey}`;
-          } else {
-            generatedKeyLinkInput.value = `${window.location.origin}${window.location.pathname}#redeem?key=${randomKey}`;
-          }
+          // BỎ WORKER, CHỈ DÙNG LINK HASH
+          const baseUrl = window.location.href.split("#")[0];
+          generatedKeyLinkInput.value = `${baseUrl}#redeem?key=${randomKey}`;
 
           generatedKeyModal.style.display = "flex";
           copySuccessText.style.display = "none";
@@ -1848,7 +1842,9 @@
              <div class="relative pt-1">
               <div class="flex mb-2 items-center justify-between">
                 <div>
-                   <span class="font-mono text-xs font-bold text-gray-600 mr-2">${k.id}</span>
+                   <span class="font-mono text-xs font-bold text-gray-600 mr-2">${
+                     k.id || "Unknow"
+                   }</span>
                    <span class="text-xs text-gray-500 truncate max-w-[150px] inline-block align-bottom">${noteText}</span>
                 </div>
                 <div class="text-right">
