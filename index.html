@@ -170,7 +170,12 @@
           </div>
 
           <!-- Footer nhỏ -->
-          <div class="mt-8 text-xs text-gray-400">Powered by Dienkon</div>
+          <div class="mt-8 text-xs text-gray-400">
+            Powered by Dienkon <br />
+            <span id="redeem-user-id" class="text-[10px] opacity-50"
+              >ID: ...</span
+            >
+          </div>
         </div>
       </div>
     </div>
@@ -186,7 +191,7 @@
           </p>
         </div>
         <div class="text-right hidden md:block">
-          <p class="text-xs text-gray-500 uppercase font-bold">Admin ID</p>
+          <p class="text-xs text-gray-500 uppercase font-bold">Your ID</p>
           <code
             id="user-id-display"
             class="bg-gray-200 px-2 py-1 rounded text-sm text-gray-700"
@@ -556,8 +561,8 @@
                     >1 Lần Dùng</span
                   >
                   <span class="block text-gray-500 text-xs"
-                    >Hết hạn NGAY LẬP TỨC sau khi click. Không thể truy cập
-                    lại.</span
+                    >Hết hạn sau khi click. Không thể truy cập lại nếu dùng máy
+                    khác.</span
                   >
                 </div>
               </label>
@@ -1140,8 +1145,32 @@
 
           onAuthStateChanged(auth, async (user) => {
             if (user) {
-              userId = user.uid;
+              // --- FIX BẮT ĐẦU: LOGIC GIỮ NGUYÊN ID NGƯỜI DÙNG ---
+              // Kiểm tra xem đã lưu ID trong trình duyệt chưa
+              const STORAGE_KEY = "dienkon_sticky_user_id";
+              let savedId = localStorage.getItem(STORAGE_KEY);
+
+              if (savedId) {
+                // Nếu đã có ID cũ, dùng lại nó (kể cả khi Firebase tạo UID mới)
+                userId = savedId;
+                console.log("Restored Sticky User ID:", userId);
+              } else {
+                // Nếu chưa có, dùng UID hiện tại của Firebase và lưu lại
+                userId = user.uid;
+                try {
+                  localStorage.setItem(STORAGE_KEY, userId);
+                } catch (e) {
+                  console.warn("Cannot save to localStorage:", e);
+                }
+                console.log("New User ID generated:", userId);
+              }
+              // --- FIX KẾT THÚC ---
+
+              // Hiển thị ID để debug
               userIdDisplay.textContent = userId;
+              const redeemFooterId = document.getElementById("redeem-user-id");
+              if (redeemFooterId) redeemFooterId.textContent = `ID: ${userId}`;
+
               linksPath = `artifacts/${appId}/public/data/links`;
               keysPath = `artifacts/${appId}/public/data/keys`;
 
@@ -1664,42 +1693,45 @@
             redeemTitle.textContent = keyData.linkName;
           }
 
-          // === LOGIC KIỂM TRA TRẠNG THÁI ===
+          // === LOGIC MỚI: ƯU TIÊN KIỂM TRA QUYỀN TRƯỚC ===
+          // Fix lỗi: Người dùng cũ bị chặn khi key đã full/claimed/used
+          const allowedUsers = keyData.allowedUsers || {};
+          const isCurrentUserAllowed =
+            allowedUsers[userId] || keyData.usedBy === userId;
+
+          if (isCurrentUserAllowed) {
+            // Người này đã dùng key này rồi -> Cho phép vào lại luôn
+            await redirectToTarget(keyRef, keyData);
+            return;
+          }
+
+          // Nếu chưa có quyền, mới kiểm tra trạng thái chặn người mới
           if (["used", "full", "claimed", "expired"].includes(keyData.status)) {
             redeemLoader.style.display = "none";
-            redeemMessage.innerHTML = `<span class="text-red-600 font-bold"><ion-icon name="alert-circle" class="align-middle"></ion-icon> Key đã hết hạn sử dụng.</span>`;
+            redeemMessage.innerHTML = `<span class="text-red-600 font-bold"><ion-icon name="alert-circle" class="align-middle"></ion-icon> Key đã hết lượt sử dụng.</span>`;
             statusContainer.classList.add("bg-red-50", "border-red-100");
             return;
           }
 
-          const allowedUsers = keyData.allowedUsers || {};
-          const isCurrentUserAllowed = allowedUsers[userId];
           const userCount = Object.keys(allowedUsers).length;
 
-          // Xử lý Logic từng loại Key
+          // Xử lý Logic người dùng MỚI
           let mode = keyData.mode || "single_use";
           let updates = {};
 
           if (mode === "single_use") {
-            // ⚠️ CẬP NHẬT QUAN TRỌNG: 1 LẦN LÀ CHẾT NGAY
-            // Bất kể ai vào, ngay lập tức set used.
-            // Nếu user load lại trang -> dính check 'used' ở trên -> block.
+            // 1 lần dùng: Chặn ngay lập tức sau khi người đầu tiên vào
             updates = {
-              status: "used", // Hết hạn ngay lập tức
+              status: "used",
               usedAt: rtdbServerTimestamp(),
               usedBy: userId,
               [`allowedUsers/${userId}`]: rtdbServerTimestamp(),
             };
-            // Không check isCurrentUserAllowed ở đây nữa, vì user cũ cũng không được vào lại
             await update(keyRef, updates);
             await redirectToTarget(keyRef, keyData);
             return;
           } else if (mode === "permanent_user") {
             // Vĩnh viễn cho 1 người
-            if (isCurrentUserAllowed) {
-              await redirectToTarget(keyRef, keyData);
-              return;
-            }
             if (userCount === 0) {
               updates = {
                 status: "claimed",
@@ -1708,15 +1740,11 @@
               await update(keyRef, updates);
               await redirectToTarget(keyRef, keyData);
             } else {
-              redeemMessage.textContent = "Key này đã có chủ sở hữu.";
+              redeemMessage.textContent = "Key này đã có chủ sở hữu khác.";
               redeemLoader.style.display = "none";
             }
           } else if (mode === "limited_users") {
             // Giới hạn số lượng
-            if (isCurrentUserAllowed) {
-              await redirectToTarget(keyRef, keyData);
-              return;
-            }
             if (userCount < keyData.maxUses) {
               updates[`allowedUsers/${userId}`] = rtdbServerTimestamp();
               if (userCount + 1 >= keyData.maxUses) updates.status = "full";
