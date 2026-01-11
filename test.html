@@ -3,26 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hệ Thống Quản Lý Key</title>
+    <meta property="og:title" content="Key Access" />
+    <meta property="og:description" content="Secure Link System" />
 
-    <!-- Các thẻ Meta cho Preview (Zalo, Facebook, Messenger) -->
-    <title>Hệ Thống Nhận Key</title>
-    <meta
-      name="description"
-      content="Vui lòng nhập key hoặc sử dụng link được cung cấp để truy cập tài liệu."
-    />
-    <meta property="og:title" content="Hệ Thống Nhận Key" />
-    <meta
-      property="og:description"
-      content="Nhấn vào để truy cập liên kết an toàn."
-    />
-    <meta property="og:type" content="website" />
-    <!-- Bạn có thể thay link ảnh dưới đây bằng logo của bạn để hiện ảnh thu nhỏ trên Zalo -->
-    <meta
-      property="og:image"
-      content="https://cdn-icons-png.flaticon.com/512/561/561794.png"
-    />
-
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Ionicons -->
     <script
       type="module"
       src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"
@@ -31,19 +19,16 @@
       nomodule
       src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"
     ></script>
+
+    <!-- SheetJS để xuất Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
     <style>
+      /* CSS cho hiệu ứng loading */
       .loader {
-        border-top-color: #3498db;
+        border-top-color: #3b82f6; /* blue-500 */
         -webkit-animation: spin 1s linear infinite;
         animation: spin 1s linear infinite;
-      }
-      @-webkit-keyframes spin {
-        0% {
-          -webkit-transform: rotate(0deg);
-        }
-        100% {
-          -webkit-transform: rotate(360deg);
-        }
       }
       @keyframes spin {
         0% {
@@ -53,25 +38,87 @@
           transform: rotate(360deg);
         }
       }
+
+      /* Ẩn các view ban đầu */
       #admin-view,
       #redeem-view,
       #loading-view,
-      #stats-view {
+      #stats-view,
+      #logs-view {
         display: none;
       }
+
+      /* Style cho modal config key */
+      #key-limit-group.hidden,
+      #edit-key-limit-group.hidden {
+        display: none;
+      }
+
+      /* Style cho tab active */
       .tab-active {
-        border-bottom-color: #3b82f6;
+        border-bottom: 2px solid #3b82f6;
         color: #3b82f6;
         font-weight: 600;
+        background-color: rgba(59, 130, 246, 0.05);
       }
       .tab-inactive {
-        border-bottom-color: transparent;
+        border-bottom: 2px solid transparent;
         color: #6b7280;
+      }
+      .tab-inactive:hover {
+        color: #374151;
+        background-color: rgba(0, 0, 0, 0.02);
+      }
+
+      /* Animation */
+      .fade-in-up {
+        animation: fadeInUp 0.5s ease-out forwards;
+      }
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Custom scrollbar */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+
+      /* Table Sticky Header */
+      .table-sticky-header th {
+        position: sticky;
+        top: 0;
+        background-color: #f9fafb;
+        z-index: 10;
+      }
+
+      /* Hover underline for clickable items */
+      .hover-underline:hover {
+        text-decoration: underline;
+        cursor: pointer;
       }
     </style>
   </head>
-  <body class="bg-gray-100 font-sans leading-normal tracking-normal">
-    <!-- ==== LOADING VIEW ==== -->
+  <body
+    class="bg-gray-100 font-sans leading-normal tracking-normal text-gray-800"
+  >
+    <!-- ==== LOADING VIEW (Initial) ==== -->
     <div
       id="loading-view"
       class="flex justify-center items-center min-h-screen"
@@ -81,194 +128,956 @@
       ></div>
     </div>
 
-    <!-- ==== REDEEM VIEW ==== -->
+    <!-- ==== REDEEM VIEW (User) ==== -->
     <div
       id="redeem-view"
-      class="min-h-screen flex items-center justify-center bg-gray-900 text-white"
+      class="min-h-screen flex items-center justify-center bg-gray-50 p-4"
     >
       <div
-        class="text-center p-10 bg-gray-800 rounded-lg shadow-xl max-w-md mx-auto"
+        class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden fade-in-up border border-gray-100"
       >
-        <h1 id="redeem-title" class="text-3xl font-bold mb-4">
-          Đang Kiểm Tra Key
-        </h1>
-        <p id="redeem-message" class="text-lg text-gray-300">
-          Vui lòng chờ trong giây lát...
-        </p>
+        <!-- Header -->
         <div
-          id="redeem-loader"
-          class="loader ease-linear rounded-full border-4 border-t-4 border-gray-500 h-16 w-16 mx-auto my-4"
-        ></div>
+          class="bg-gradient-to-r from-blue-500 to-indigo-600 h-24 flex items-center justify-center relative"
+        >
+          <div class="bg-white p-4 rounded-full shadow-lg absolute -bottom-10">
+            <ion-icon
+              name="shield-checkmark"
+              class="text-5xl text-blue-600"
+            ></ion-icon>
+          </div>
+        </div>
+
+        <div class="pt-14 pb-8 px-8 text-center">
+          <h1
+            id="redeem-title"
+            class="text-2xl font-bold text-gray-800 mb-2 leading-tight"
+          >
+            Đang tải thông tin...
+          </h1>
+          <p
+            class="text-sm text-gray-500 mb-6 uppercase tracking-wide font-semibold"
+          >
+            Xác thực truy cập an toàn
+          </p>
+
+          <div class="space-y-4">
+            <!-- Loading / Status Box -->
+            <div
+              id="status-container"
+              class="bg-blue-50 border border-blue-100 rounded-lg p-6 flex flex-col items-center justify-center min-h-[120px] transition-all duration-300"
+            >
+              <div
+                id="redeem-loader"
+                class="loader ease-linear rounded-full border-4 border-t-4 border-blue-400 h-10 w-10 mb-4"
+              ></div>
+              <p
+                id="redeem-message"
+                class="text-blue-800 font-medium text-base animate-pulse"
+              >
+                Đang kiểm tra Key...
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-8 text-xs text-gray-400">
+            Hệ thống bảo mật bởi Dienkon<br />
+            <span id="redeem-user-id" class="text-[10px] opacity-50"
+              >ID: ...</span
+            >
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- ==== ADMIN VIEW ==== -->
     <div id="admin-view" class="container mx-auto max-w-7xl p-4 md:p-8">
-      <header class="mb-6">
-        <h1 class="text-4xl font-bold text-gray-800">Hệ Thống Quản Lý Key</h1>
-        <p class="text-lg text-gray-600">
-          ID Người Dùng:
-          <code id="user-id-display" class="bg-gray-200 px-2 py-1 rounded"
+      <!-- Header -->
+      <header
+        class="mb-6 flex flex-col md:flex-row justify-between items-end gap-4"
+      >
+        <div>
+          <h1 class="text-3xl md:text-4xl font-bold text-gray-800">
+            Quản Lý Key
+          </h1>
+          <p class="text-gray-600">Hệ thống phân phối và thống kê truy cập.</p>
+        </div>
+        <div class="text-right flex flex-col items-end">
+          <p class="text-xs text-gray-500 uppercase font-bold">Admin ID</p>
+          <code
+            id="user-id-display"
+            class="bg-white border px-2 py-1 rounded text-sm text-gray-700 shadow-sm"
             >...</code
           >
-        </p>
+        </div>
       </header>
 
-      <nav class="flex border-b-2 border-gray-200 mb-6">
+      <!-- Tab Navigation -->
+      <nav
+        class="flex border-b border-gray-200 mb-6 bg-white rounded-t-lg shadow-sm overflow-x-auto"
+      >
         <button
           id="admin-tab"
           onclick="showView('admin-content')"
-          class="py-3 px-5 text-lg tab-active"
+          class="py-3 px-6 text-sm md:text-base font-medium tab-active transition-all whitespace-nowrap"
         >
-          Quản Lý
+          <ion-icon
+            name="layers-outline"
+            class="mr-2 align-middle text-lg"
+          ></ion-icon
+          >Quản Lý
         </button>
         <button
           id="stats-tab"
           onclick="showView('stats-view')"
-          class="py-3 px-5 text-lg tab-inactive"
+          class="py-3 px-6 text-sm md:text-base font-medium tab-inactive transition-all whitespace-nowrap"
         >
-          Thống Kê
+          <ion-icon
+            name="pie-chart-outline"
+            class="mr-2 align-middle text-lg"
+          ></ion-icon
+          >Tổng Quan
+        </button>
+        <button
+          id="logs-tab"
+          onclick="showView('logs-view')"
+          class="py-3 px-6 text-sm md:text-base font-medium tab-inactive transition-all whitespace-nowrap"
+        >
+          <ion-icon
+            name="people-outline"
+            class="mr-2 align-middle text-lg"
+          ></ion-icon
+          >Lịch Sử User
         </button>
       </nav>
 
+      <!-- ==== 1. ADMIN CONTENT (Quản Lý Link/Key) ==== -->
       <div id="admin-content">
         <div class="flex flex-col md:flex-row gap-8">
-          <div class="w-full md:w-1/2">
-            <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
-              <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
-                Thêm Link Gốc Mới
+          <!-- Cột Trái: Thêm Link & Danh Sách -->
+          <div class="w-full md:w-5/12">
+            <!-- Form Thêm Link -->
+            <div
+              class="bg-white p-6 rounded-xl shadow-md mb-8 border-t-4 border-blue-500"
+            >
+              <h2
+                class="text-lg font-bold text-gray-800 mb-4 flex items-center"
+              >
+                <ion-icon
+                  name="add-circle"
+                  class="text-blue-500 mr-2 text-xl"
+                ></ion-icon
+                >Thêm Link Gốc
               </h2>
               <form id="add-link-form">
                 <div class="mb-4">
                   <label
-                    for="link-name"
-                    class="block text-gray-700 font-bold mb-2"
-                    >Tên mô tả (Sẽ hiện khi gửi Zalo)</label
+                    class="block text-gray-700 font-bold mb-1 text-xs uppercase"
+                    >Tên hiển thị</label
                   >
                   <input
                     type="text"
                     id="link-name"
-                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    placeholder="VD: Tài liệu Toán 12..."
                     required
                   />
                 </div>
                 <div class="mb-4">
                   <label
-                    for="target-url"
-                    class="block text-gray-700 font-bold mb-2"
-                    >Link Gốc</label
+                    class="block text-gray-700 font-bold mb-1 text-xs uppercase"
+                    >Link Đích (URL)</label
                   >
                   <input
                     type="url"
                     id="target-url"
-                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                     placeholder="https://..."
                     required
                   />
                 </div>
                 <button
                   type="submit"
-                  class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg"
+                  class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all"
                 >
                   Thêm Link Mới
                 </button>
               </form>
             </div>
-            <div class="bg-white p-6 rounded-lg shadow-lg">
-              <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
-                Danh Sách Link Gốc
+
+            <!-- Danh Sách Link -->
+            <div
+              class="bg-white p-6 rounded-xl shadow-md border-t-4 border-gray-500"
+            >
+              <h2
+                class="text-lg font-bold text-gray-800 mb-4 flex items-center"
+              >
+                <ion-icon
+                  name="library"
+                  class="text-gray-600 mr-2 text-xl"
+                ></ion-icon
+                >Kho Link
               </h2>
               <div
                 id="links-list"
-                class="space-y-4 max-h-96 overflow-y-auto"
-              ></div>
+                class="space-y-3 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar"
+              >
+                <p class="text-gray-400 text-center py-4 text-sm">
+                  Chưa có dữ liệu link.
+                </p>
+              </div>
             </div>
           </div>
-          <div class="w-full md:w-1/2">
-            <div class="bg-white p-6 rounded-lg shadow-lg h-full">
-              <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
-                Lịch Sử Key
-              </h2>
+
+          <!-- Cột Phải: Danh Sách Key -->
+          <div class="w-full md:w-7/12">
+            <div
+              class="bg-white p-6 rounded-xl shadow-md h-full border-t-4 border-green-500 flex flex-col"
+            >
+              <div class="mb-4 pb-4 border-b">
+                <div class="flex justify-between items-center mb-3">
+                  <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                    <ion-icon
+                      name="key"
+                      class="text-green-600 mr-2 text-xl"
+                    ></ion-icon
+                    >Danh Sách Key
+                  </h2>
+                  <span
+                    class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded"
+                    >Mới nhất trên cùng</span
+                  >
+                </div>
+                <!-- Search Key -->
+                <div class="relative">
+                  <span
+                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  >
+                    <ion-icon
+                      name="search-outline"
+                      class="text-gray-400"
+                    ></ion-icon>
+                  </span>
+                  <input
+                    type="text"
+                    id="search-key-input"
+                    class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                    placeholder="Tìm kiếm Key, Note hoặc ID..."
+                  />
+                </div>
+              </div>
+
               <div
                 id="keys-list"
-                class="space-y-3 max-h-[34rem] overflow-y-auto"
-              ></div>
+                class="space-y-3 overflow-y-auto flex-grow custom-scrollbar"
+                style="max-height: 800px"
+              >
+                <p class="text-gray-400 text-center py-10">
+                  Chưa có key nào được tạo.
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div id="stats-view" class="hidden">
-        <!-- Thống kê giữ nguyên như file trước -->
-        <div id="stats-container"></div>
+      <!-- ==== 2. STATS VIEW (Thống Kê Tổng Quan) ==== -->
+      <div id="stats-view">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+          <div
+            class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform"
+          >
+            <div class="flex justify-between items-start">
+              <div>
+                <p
+                  class="text-blue-100 text-xs font-bold uppercase tracking-wider"
+                >
+                  Tổng Link Gốc
+                </p>
+                <p id="stats-total-links" class="text-4xl font-bold mt-2">0</p>
+              </div>
+              <div class="bg-white bg-opacity-20 p-2 rounded-lg">
+                <ion-icon name="link" class="text-2xl"></ion-icon>
+              </div>
+            </div>
+          </div>
+          <div
+            class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform"
+          >
+            <div class="flex justify-between items-start">
+              <div>
+                <p
+                  class="text-green-100 text-xs font-bold uppercase tracking-wider"
+                >
+                  Tổng Key Đã Tạo
+                </p>
+                <p id="stats-total-keys" class="text-4xl font-bold mt-2">0</p>
+              </div>
+              <div class="bg-white bg-opacity-20 p-2 rounded-lg">
+                <ion-icon name="key" class="text-2xl"></ion-icon>
+              </div>
+            </div>
+          </div>
+          <div
+            class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform"
+          >
+            <div class="flex justify-between items-start">
+              <div>
+                <p
+                  class="text-purple-100 text-xs font-bold uppercase tracking-wider"
+                >
+                  Lượt Truy Cập
+                </p>
+                <p id="stats-total-clicks" class="text-4xl font-bold mt-2">0</p>
+              </div>
+              <div class="bg-white bg-opacity-20 p-2 rounded-lg">
+                <ion-icon name="analytics" class="text-2xl"></ion-icon>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Top Links -->
+          <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+              <ion-icon name="trophy" class="text-yellow-500 mr-2"></ion-icon
+              >Top 5 Link Phổ Biến
+            </h3>
+            <div id="stats-top-links" class="space-y-4"></div>
+          </div>
+          <!-- Top Keys -->
+          <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+              <ion-icon name="flame" class="text-red-500 mr-2"></ion-icon>Top 5
+              Key Hoạt Động
+            </h3>
+            <div id="stats-top-keys" class="space-y-4"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==== 3. LOGS VIEW (Lịch Sử User) ==== -->
+      <div id="logs-view">
+        <div
+          class="bg-white rounded-xl shadow-md border border-gray-200 flex flex-col h-[calc(100vh-200px)]"
+        >
+          <!-- Toolbar -->
+          <div
+            class="p-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50 rounded-t-xl"
+          >
+            <div class="flex items-center gap-2">
+              <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                <ion-icon name="list" class="text-indigo-600 mr-2"></ion-icon
+                >Lịch Sử User Truy Cập
+              </h2>
+              <span
+                id="logs-count-badge"
+                class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded-full"
+                >0 bản ghi</span
+              >
+            </div>
+
+            <div class="flex gap-2 w-full md:w-auto">
+              <input
+                type="text"
+                id="logs-search"
+                class="flex-1 md:w-64 px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Lọc theo User ID hoặc Key..."
+              />
+              <button
+                onclick="exportToExcel()"
+                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center shadow transition-colors whitespace-nowrap"
+              >
+                <ion-icon name="document-text" class="mr-2"></ion-icon>Xuất
+                Excel
+              </button>
+            </div>
+          </div>
+
+          <!-- Table Wrapper -->
+          <div class="flex-grow overflow-auto custom-scrollbar">
+            <table class="w-full text-left border-collapse">
+              <thead
+                class="bg-gray-100 text-gray-600 text-xs uppercase font-bold table-sticky-header"
+              >
+                <tr>
+                  <th class="p-4 border-b">Thời gian</th>
+                  <th class="p-4 border-b">User ID (Thiết bị)</th>
+                  <th class="p-4 border-b">Key Sử Dụng</th>
+                  <th class="p-4 border-b">Link Gốc</th>
+                  <th class="p-4 border-b">Loại Key</th>
+                </tr>
+              </thead>
+              <tbody
+                id="logs-table-body"
+                class="text-sm text-gray-700 divide-y divide-gray-100"
+              >
+                <!-- Data injected via JS -->
+                <tr>
+                  <td colspan="5" class="p-6 text-center text-gray-500">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Modal cấu hình key -->
+    <!-- ==== MODALS ==== -->
+
+    <!-- Modal: Key Created Success -->
+    <div
+      id="generated-key-modal"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm transition-opacity"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg transform scale-100 transition-transform"
+      >
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-green-600 flex items-center">
+            <ion-icon name="checkmark-circle" class="mr-2 text-2xl"></ion-icon
+            >Tạo Key Thành Công
+          </h3>
+          <button
+            onclick="closeModal('generated-key-modal')"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <ion-icon name="close" class="text-2xl"></ion-icon>
+          </button>
+        </div>
+        <div class="relative group mb-2">
+          <input
+            id="generated-key-link"
+            type="text"
+            readonly
+            class="w-full p-4 bg-gray-50 border border-gray-300 rounded-lg text-gray-800 pr-14 font-mono text-sm focus:ring-2 focus:ring-green-500 outline-none"
+          />
+          <button
+            onclick="copyKeyLink()"
+            class="absolute right-2 top-1/2 -translate-y-1/2 bg-white hover:bg-gray-100 p-2 rounded-lg border shadow-sm"
+            title="Sao chép"
+          >
+            <ion-icon name="copy-outline"></ion-icon>
+          </button>
+        </div>
+        <p
+          id="copy-success"
+          class="text-green-500 text-xs font-bold h-4 mb-4 text-right hidden"
+        >
+          <ion-icon name="checkmark"></ion-icon> Đã sao chép!
+        </p>
+        <div class="text-center">
+          <button
+            onclick="closeModal('generated-key-modal')"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg"
+          >
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Config New Key -->
     <div
       id="generate-key-config-modal"
-      class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
     >
-      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
-        <h3 class="text-2xl font-bold mb-4">Cấu Hình Key</h3>
-        <p class="mb-4">
-          Tên link:
-          <strong id="config-link-name" class="text-blue-600"></strong>
-        </p>
+      <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-gray-800">Cấu Hình Key</h3>
+          <button
+            onclick="closeModal('generate-key-config-modal')"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <ion-icon name="close" class="text-2xl"></ion-icon>
+          </button>
+        </div>
+        <div class="bg-blue-50 p-3 rounded-lg mb-4 border border-blue-100">
+          <p class="text-xs text-blue-500 uppercase font-bold">Key cho link:</p>
+          <p
+            id="config-link-name"
+            class="font-bold text-blue-800 text-lg truncate"
+          >
+            ...
+          </p>
+        </div>
         <form id="generate-key-form">
           <input type="hidden" id="config-link-id" />
           <div class="mb-4">
-            <label class="block font-bold mb-2">Loại Key:</label>
-            <div class="space-y-2">
-              <label class="flex items-center"
-                ><input
+            <label class="block text-gray-700 font-bold mb-2 text-sm"
+              >Loại Key</label
+            >
+            <div class="grid grid-cols-1 gap-3">
+              <label
+                class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+              >
+                <input
                   type="radio"
                   name="keyMode"
                   value="single_use"
+                  class="text-blue-600 h-5 w-5"
                   checked
-                /><span class="ml-2">1 Lần Dùng</span></label
+                />
+                <div class="ml-3">
+                  <span class="block font-medium text-sm">1 Lần Dùng</span>
+                  <span class="block text-gray-500 text-xs"
+                    >Vô hiệu hóa ngay sau khi dùng.</span
+                  >
+                </div>
+              </label>
+              <label
+                class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
               >
-              <label class="flex items-center"
-                ><input
+                <input
                   type="radio"
                   name="keyMode"
                   value="limited_users"
-                /><span class="ml-2">Giới Hạn</span></label
+                  class="text-blue-600 h-5 w-5"
+                />
+                <div class="ml-3">
+                  <span class="block font-medium text-sm"
+                    >Giới Hạn Số Lượng</span
+                  >
+                  <span class="block text-gray-500 text-xs"
+                    >Cho phép N người dùng khác nhau.</span
+                  >
+                </div>
+              </label>
+              <label
+                class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
               >
-              <label class="flex items-center"
-                ><input
+                <input
                   type="radio"
                   name="keyMode"
                   value="permanent_user"
-                /><span class="ml-2">Vĩnh Viễn</span></label
-              >
+                  class="text-blue-600 h-5 w-5"
+                />
+                <div class="ml-3">
+                  <span class="block font-medium text-sm"
+                    >Vĩnh Viễn (1 Device)</span
+                  >
+                  <span class="block text-gray-500 text-xs"
+                    >Gắn chặt với 1 thiết bị duy nhất.</span
+                  >
+                </div>
+              </label>
             </div>
           </div>
-          <div id="key-limit-group" class="mb-4 hidden">
-            <label class="block font-bold mb-2">Số người tối đa:</label>
+
+          <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-1 text-sm"
+              >Ghi chú (Note)</label
+            >
+            <input
+              type="text"
+              id="key-note"
+              class="w-full px-3 py-2 border rounded-lg text-sm"
+              placeholder="VD: Gửi cho bạn A..."
+            />
+          </div>
+
+          <div id="key-limit-group" class="mb-5 hidden">
+            <label class="block text-gray-700 font-bold mb-1 text-sm"
+              >Số người tối đa</label
+            >
             <input
               type="number"
               id="key-limit-input"
               value="5"
               min="1"
-              class="w-full px-3 py-2 border rounded-lg"
+              class="w-full px-3 py-2 border rounded-lg text-sm"
             />
           </div>
+
           <button
             type="submit"
-            class="w-full bg-green-500 text-white font-bold py-3 rounded-lg"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all"
           >
-            Tạo Key
+            Tạo Key Ngay
           </button>
         </form>
       </div>
     </div>
 
+    <!-- Modal: Key Stats Detail -->
+    <div
+      id="key-stats-modal"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+    >
+      <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-2xl font-bold text-gray-800">Chi Tiết Key</h3>
+          <button
+            onclick="closeModal('key-stats-modal')"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <ion-icon name="close" class="text-3xl"></ion-icon>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div class="bg-gray-50 p-3 rounded-lg border">
+            <p class="text-xs text-gray-500 uppercase">Key ID</p>
+            <code
+              id="stats-key-id"
+              class="text-lg font-bold text-blue-600 select-all"
+              >...</code
+            >
+          </div>
+          <div class="bg-gray-50 p-3 rounded-lg border">
+            <p class="text-xs text-gray-500 uppercase">Trạng Thái</p>
+            <span id="stats-key-status" class="font-bold">...</span>
+          </div>
+        </div>
+
+        <div class="space-y-3 mb-6">
+          <p class="text-sm">
+            Link Gốc:
+            <span id="stats-key-link-name" class="font-semibold text-gray-800"
+              >...</span
+            >
+          </p>
+          <div
+            id="stats-key-note-container"
+            class="hidden bg-yellow-50 p-2 rounded border border-yellow-200 text-sm text-gray-700 italic"
+          >
+            <ion-icon name="pencil-outline" class="align-middle mr-1"></ion-icon
+            ><span id="stats-key-note"></span>
+          </div>
+          <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+            <p>
+              Tạo lúc:
+              <span id="stats-key-created-at" class="font-medium">...</span>
+            </p>
+            <p>
+              Loại: <span id="stats-key-mode" class="font-medium">...</span>
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-3 text-sm">
+            <p class="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+              Clicks:
+              <span id="stats-key-total-clicks" class="font-bold">...</span>
+            </p>
+            <p class="bg-green-100 text-green-800 px-2 py-1 rounded">
+              Users:
+              <span id="stats-key-user-count" class="font-bold">...</span>
+            </p>
+            <span
+              id="stats-key-limit-details"
+              class="hidden bg-red-100 text-red-800 px-2 py-1 rounded"
+              >Limit:
+              <span id="stats-key-max-uses" class="font-bold">...</span></span
+            >
+          </div>
+        </div>
+
+        <!-- Danh sách người dùng -->
+        <div class="border rounded-lg overflow-hidden">
+          <div
+            class="bg-gray-100 px-4 py-2 border-b flex justify-between items-center"
+          >
+            <h4 class="font-bold text-gray-700 text-sm">
+              Lịch sử User truy cập
+            </h4>
+            <span class="text-xs text-gray-500">Mới nhất</span>
+          </div>
+          <div
+            id="stats-key-user-list"
+            class="max-h-48 overflow-y-auto bg-white p-2 space-y-1 custom-scrollbar"
+          >
+            <p class="text-gray-500 text-sm text-center py-4">
+              Chưa có ai sử dụng key này.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: User History Detail (NEW) -->
+    <div
+      id="user-history-modal"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-4xl h-[80vh] flex flex-col"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h3 class="text-xl font-bold text-gray-800 flex items-center">
+              <ion-icon name="person" class="mr-2 text-indigo-600"></ion-icon
+              >Lịch Sử User
+            </h3>
+            <p class="text-sm text-gray-500 mt-1">
+              ID:
+              <code
+                id="user-history-id"
+                class="font-mono bg-gray-100 px-2 py-0.5 rounded text-blue-600 select-all"
+                >...</code
+              >
+            </p>
+          </div>
+          <button
+            onclick="closeModal('user-history-modal')"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <ion-icon name="close" class="text-3xl"></ion-icon>
+          </button>
+        </div>
+
+        <div class="flex-grow overflow-auto custom-scrollbar border rounded-lg">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 text-gray-600 text-xs uppercase font-bold">
+              <tr>
+                <th class="p-3 border-b">Thời gian</th>
+                <th class="p-3 border-b">Link Gốc</th>
+                <th class="p-3 border-b">Key Sử Dụng</th>
+                <th class="p-3 border-b">Loại Key</th>
+              </tr>
+            </thead>
+            <tbody
+              id="user-history-tbody"
+              class="text-sm text-gray-700 divide-y divide-gray-100"
+            >
+              <!-- Data -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Link Stats Detail (NEW) -->
+    <div
+      id="link-stats-modal"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-4xl h-[80vh] flex flex-col"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h3 class="text-xl font-bold text-gray-800 flex items-center">
+              <ion-icon name="stats-chart" class="mr-2 text-blue-600"></ion-icon
+              >Thống Kê Link
+            </h3>
+            <p
+              id="link-stats-name"
+              class="text-sm text-gray-600 mt-1 font-semibold"
+            >
+              ...
+            </p>
+          </div>
+          <button
+            onclick="closeModal('link-stats-modal')"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <ion-icon name="close" class="text-3xl"></ion-icon>
+          </button>
+        </div>
+
+        <div class="flex gap-4 mb-4">
+          <div class="bg-blue-50 p-3 rounded-lg flex-1">
+            <p class="text-xs text-blue-500 uppercase font-bold">
+              Tổng lượt truy cập
+            </p>
+            <p id="link-stats-total" class="text-2xl font-bold text-blue-800">
+              0
+            </p>
+          </div>
+          <div class="bg-green-50 p-3 rounded-lg flex-1">
+            <p class="text-xs text-green-500 uppercase font-bold">
+              Số Key liên quan
+            </p>
+            <p id="link-stats-keys" class="text-2xl font-bold text-green-800">
+              0
+            </p>
+          </div>
+        </div>
+
+        <div class="flex-grow overflow-auto custom-scrollbar border rounded-lg">
+          <table class="w-full text-left border-collapse">
+            <thead
+              class="bg-gray-50 text-gray-600 text-xs uppercase font-bold table-sticky-header"
+            >
+              <tr>
+                <th class="p-3 border-b">Thời gian</th>
+                <th class="p-3 border-b">User ID</th>
+                <th class="p-3 border-b">Key Sử Dụng</th>
+                <th class="p-3 border-b">Loại Key</th>
+              </tr>
+            </thead>
+            <tbody
+              id="link-stats-tbody"
+              class="text-sm text-gray-700 divide-y divide-gray-100"
+            >
+              <!-- Data -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Edit Link -->
+    <div
+      id="edit-link-modal"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+    >
+      <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">Sửa Link</h3>
+        <form id="edit-link-form">
+          <input type="hidden" id="edit-link-id" />
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-1"
+              >Tên mô tả</label
+            >
+            <input
+              type="text"
+              id="edit-link-name"
+              class="w-full border p-2 rounded"
+              required
+            />
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-1"
+              >Link Gốc</label
+            >
+            <input
+              type="url"
+              id="edit-target-url"
+              class="w-full border p-2 rounded"
+              required
+            />
+          </div>
+          <div class="flex gap-2 justify-end">
+            <button
+              type="button"
+              onclick="closeModal('edit-link-modal')"
+              class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700"
+            >
+              Lưu
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Edit Key -->
+    <div
+      id="edit-key-modal"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+    >
+      <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-gray-800">Sửa Key</h3>
+          <button onclick="closeModal('edit-key-modal')" class="text-gray-400">
+            <ion-icon name="close" class="text-2xl"></ion-icon>
+          </button>
+        </div>
+        <form id="edit-key-form">
+          <input type="hidden" id="edit-key-id" />
+          <div class="bg-gray-50 p-3 rounded mb-4 text-sm">
+            <p>
+              ID:
+              <span
+                id="edit-key-id-display"
+                class="font-mono font-bold text-blue-600"
+              ></span>
+            </p>
+            <p class="truncate mt-1">
+              Link: <span id="edit-key-link-name" class="font-semibold"></span>
+            </p>
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-1"
+              >Ghi chú</label
+            >
+            <input
+              type="text"
+              id="edit-key-note"
+              class="w-full border p-2 rounded"
+            />
+          </div>
+          <div id="edit-key-limit-group" class="mb-4 hidden">
+            <label class="block text-gray-700 text-sm font-bold mb-1"
+              >Tăng giới hạn người dùng</label
+            >
+            <input
+              type="number"
+              id="edit-key-limit-input"
+              min="1"
+              class="w-full border p-2 rounded"
+            />
+          </div>
+          <button
+            type="submit"
+            class="w-full bg-blue-600 text-white font-bold py-2 rounded mb-3"
+          >
+            Lưu Thay Đổi
+          </button>
+
+          <div class="border-t pt-3">
+            <button
+              type="button"
+              id="reset-key-btn"
+              class="w-full bg-yellow-100 text-yellow-800 py-2 rounded font-bold hover:bg-yellow-200 border border-yellow-300 flex justify-center items-center"
+            >
+              <ion-icon name="refresh" class="mr-2"></ion-icon> Reset Key (Xóa
+              lịch sử dùng)
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Confirm Delete -->
+    <div
+      id="confirm-modal"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center"
+      >
+        <div
+          class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4"
+        >
+          <ion-icon name="warning" class="text-red-600 text-2xl"></ion-icon>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">Xác nhận xóa?</h3>
+        <p id="confirm-message" class="text-sm text-gray-500 mb-6"></p>
+        <div class="flex justify-center space-x-3">
+          <button
+            onclick="closeModal('confirm-modal')"
+            class="bg-white text-gray-700 border border-gray-300 font-bold py-2 px-4 rounded hover:bg-gray-50"
+          >
+            Hủy
+          </button>
+          <button
+            id="confirm-delete-btn"
+            class="bg-red-600 text-white font-bold py-2 px-4 rounded hover:bg-red-700 shadow"
+          >
+            Xóa Ngay
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==== SCRIPTS ==== -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
       import {
         getAuth,
         signInAnonymously,
+        signInWithCustomToken,
         onAuthStateChanged,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
       import {
@@ -279,163 +1088,910 @@
         push,
         update,
         onValue,
-        serverTimestamp,
+        remove,
+        serverTimestamp as rtdbServerTimestamp,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
+      // Global Vars
       let db, auth, userId, appId;
       let linksPath, keysPath;
+      let allLinksData = {},
+        allKeysData = {};
 
-      async function init() {
-        const config = JSON.parse(__firebase_config);
-        appId = typeof __app_id !== "undefined" ? __app_id : "default-app-id";
-        const app = initializeApp(config);
-        db = getDatabase(app);
-        auth = getAuth(app);
+      // DOM Elements
+      const views = {
+        loading: document.getElementById("loading-view"),
+        admin: document.getElementById("admin-view"),
+        redeem: document.getElementById("redeem-view"),
+        adminContent: document.getElementById("admin-content"),
+        stats: document.getElementById("stats-view"),
+        logs: document.getElementById("logs-view"),
+      };
 
-        onAuthStateChanged(auth, (user) => {
-          if (user) {
-            userId = user.uid;
-            document.getElementById("user-id-display").textContent = userId;
-            linksPath = `artifacts/${appId}/public/data/links`;
-            keysPath = `artifacts/${appId}/public/data/keys`;
-            handleRouting();
-          } else {
-            signInAnonymously(auth);
-          }
+      const tabs = {
+        admin: document.getElementById("admin-tab"),
+        stats: document.getElementById("stats-tab"),
+        logs: document.getElementById("logs-tab"),
+      };
+
+      // Redeem Elements
+      const redeemEl = {
+        title: document.getElementById("redeem-title"),
+        msg: document.getElementById("redeem-message"),
+        loader: document.getElementById("redeem-loader"),
+        container: document.getElementById("status-container"),
+        userId: document.getElementById("redeem-user-id"),
+      };
+
+      // Helper: Toggle View
+      window.showView = (viewName) => {
+        views.adminContent.style.display = "none";
+        views.stats.style.display = "none";
+        views.logs.style.display = "none";
+
+        Object.values(tabs).forEach((t) => {
+          t.classList.remove("tab-active");
+          t.classList.add("tab-inactive");
+        });
+
+        if (viewName === "admin-content") {
+          views.adminContent.style.display = "block";
+          tabs.admin.classList.add("tab-active");
+          tabs.admin.classList.remove("tab-inactive");
+        } else if (viewName === "stats-view") {
+          views.stats.style.display = "block";
+          tabs.stats.classList.add("tab-active");
+          tabs.stats.classList.remove("tab-inactive");
+          updateStatsView();
+        } else if (viewName === "logs-view") {
+          views.logs.style.display = "block";
+          tabs.logs.classList.add("tab-active");
+          tabs.logs.classList.remove("tab-inactive");
+          renderLogsTable();
+        }
+      };
+
+      // Helper: Format Date
+      function formatTimestamp(ts) {
+        if (!ts) return "-";
+        return new Date(ts).toLocaleString("vi-VN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
         });
       }
 
-      async function handleRouting() {
-        const hash = window.location.hash;
-        if (hash.startsWith("#redeem?key=")) {
-          const keyId = hash.split("key=")[1];
-          showRedeem(keyId);
-        } else {
-          showAdmin();
+      // Helper: Close Modal
+      window.closeModal = (id) =>
+        (document.getElementById(id).style.display = "none");
+
+      // ---- KEY STATS DETAIL MODAL ----
+      window.openKeyStatsModal = (keyId) => {
+        const key = allKeysData[keyId];
+        if (!key) return;
+
+        // Tính toán trạng thái
+        let statusText = "Active",
+          statusColor = "text-green-600";
+        if (["used", "full", "expired"].includes(key.status)) {
+          statusText = "Hết hạn";
+          statusColor = "text-red-600";
         }
-      }
+        if (key.status === "claimed") {
+          statusText = "Đã nhận";
+          statusColor = "text-purple-600";
+        }
 
-      function showAdmin() {
-        document.getElementById("loading-view").style.display = "none";
-        document.getElementById("admin-view").style.display = "block";
-        document.getElementById("redeem-view").style.display = "none";
-        loadAdmin();
-      }
+        const count = key.allowedUsers
+          ? Object.keys(key.allowedUsers).length
+          : 0;
+        if (key.mode === "limited_users")
+          statusText += ` (${count}/${key.maxUses})`;
 
-      async function showRedeem(keyId) {
-        document.getElementById("loading-view").style.display = "none";
-        document.getElementById("admin-view").style.display = "none";
-        document.getElementById("redeem-view").style.display = "flex";
+        // Fill Data
+        document.getElementById("stats-key-id").textContent = keyId;
+        const statusEl = document.getElementById("stats-key-status");
+        statusEl.textContent = statusText;
+        statusEl.className = `font-bold ${statusColor}`;
 
-        // Cố gắng lấy tên link sớm nhất có thể để hiện Title
-        const keyRef = ref(db, `${keysPath}/${keyId}`);
-        const snap = await get(keyRef);
-        if (snap.exists()) {
-          const data = snap.val();
-          if (data.linkName) {
-            // Đổi tiêu đề ngay lập tức
-            document.title = data.linkName;
-            document.getElementById("redeem-title").textContent = data.linkName;
+        document.getElementById("stats-key-link-name").textContent =
+          allLinksData[key.linkId]?.name || key.linkName || "Unknown";
 
-            // Cập nhật thẻ Meta OG Title (Dành cho một số trình duyệt bắt kịp)
-            let ogTitle = document.querySelector('meta[property="og:title"]');
-            if (ogTitle) ogTitle.setAttribute("content", data.linkName);
+        // Note
+        const noteCont = document.getElementById("stats-key-note-container");
+        if (key.note) {
+          noteCont.style.display = "block";
+          document.getElementById("stats-key-note").textContent = key.note;
+        } else {
+          noteCont.style.display = "none";
+        }
+
+        document.getElementById("stats-key-created-at").textContent =
+          formatTimestamp(key.createdAt);
+        document.getElementById("stats-key-total-clicks").textContent =
+          key.totalClicks || 0;
+        document.getElementById("stats-key-user-count").textContent = count;
+
+        let modeText = "1 Lần";
+        if (key.mode === "limited_users")
+          modeText = `Giới Hạn (${key.maxUses})`;
+        if (key.mode === "permanent_user") modeText = "Vĩnh Viễn";
+        document.getElementById("stats-key-mode").textContent = modeText;
+
+        const limitEl = document.getElementById("stats-key-limit-details");
+        if (key.mode === "limited_users") {
+          limitEl.style.display = "inline-block";
+          document.getElementById("stats-key-max-uses").textContent =
+            key.maxUses;
+        } else {
+          limitEl.style.display = "none";
+        }
+
+        // Render User List
+        const list = document.getElementById("stats-key-user-list");
+        list.innerHTML = "";
+
+        const users = key.allowedUsers || {};
+        // Hỗ trợ backward compat cho data cũ chỉ có usedBy
+        if (key.usedBy && !users[key.usedBy])
+          users[key.usedBy] = key.usedAt || key.createdAt;
+
+        if (Object.keys(users).length === 0) {
+          list.innerHTML =
+            '<p class="text-gray-500 text-sm text-center py-4">Chưa có ai sử dụng key này.</p>';
+        } else {
+          // Sort newest first
+          const sortedUsers = Object.entries(users).sort((a, b) => b[1] - a[1]);
+          sortedUsers.forEach(([uid, ts]) => {
+            const d = document.createElement("div");
+            d.className =
+              "flex justify-between text-xs border-b pb-1 last:border-0 hover:bg-gray-50 p-1";
+            d.innerHTML = `<span class="font-mono text-blue-600 hover-underline select-all" onclick="window.openUserHistory('${uid}')">${uid}</span><span class="text-gray-500">${formatTimestamp(
+              ts
+            )}</span>`;
+            list.appendChild(d);
+          });
+        }
+
+        document.getElementById("key-stats-modal").style.display = "flex";
+      };
+
+      // ---- USER HISTORY MODAL (NEW FEATURE) ----
+      window.openUserHistory = (targetUid) => {
+        if (!targetUid) return;
+        document.getElementById("user-history-id").textContent = targetUid;
+
+        const tbody = document.getElementById("user-history-tbody");
+        tbody.innerHTML = "";
+
+        const allLogs = generateReportData();
+        const userLogs = allLogs.filter((log) => log.uid === targetUid);
+
+        if (userLogs.length === 0) {
+          tbody.innerHTML =
+            '<tr><td colspan="4" class="p-4 text-center text-gray-500 italic">User này chưa có hoạt động nào.</td></tr>';
+        } else {
+          userLogs.forEach((row) => {
+            const tr = document.createElement("tr");
+            tr.className = "border-b border-gray-100 hover:bg-gray-50";
+            tr.innerHTML = `
+                <td class="p-3 whitespace-nowrap text-gray-600">${row.timeStr}</td>
+                <td class="p-3">${row.linkName}</td>
+                <td class="p-3 font-mono text-blue-600 hover-underline cursor-pointer" onclick="window.openKeyStatsModal('${row.keyId}')">${row.keyId}</td>
+                <td class="p-3 text-xs"><span class="bg-gray-100 px-2 py-1 rounded">${row.mode}</span></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+        document.getElementById("user-history-modal").style.display = "flex";
+      };
+
+      // ---- LINK STATS MODAL (NEW FEATURE) ----
+      window.openLinkStats = (linkId, linkName) => {
+        document.getElementById("link-stats-name").textContent = linkName;
+        const tbody = document.getElementById("link-stats-tbody");
+        tbody.innerHTML = "";
+
+        // Filter logs related to this link
+        const allLogs = generateReportData();
+        const linkLogs = allLogs.filter((log) => log.linkId === linkId);
+
+        // Count keys for this link
+        const relatedKeys = Object.values(allKeysData).filter(
+          (k) => k.linkId === linkId
+        ).length;
+
+        document.getElementById("link-stats-total").textContent =
+          linkLogs.length;
+        document.getElementById("link-stats-keys").textContent = relatedKeys;
+
+        if (linkLogs.length === 0) {
+          tbody.innerHTML =
+            '<tr><td colspan="4" class="p-4 text-center text-gray-500 italic">Link này chưa có lượt truy cập nào.</td></tr>';
+        } else {
+          linkLogs.forEach((row) => {
+            const tr = document.createElement("tr");
+            tr.className = "border-b border-gray-100 hover:bg-gray-50";
+            tr.innerHTML = `
+                 <td class="p-3 whitespace-nowrap text-gray-600">${row.timeStr}</td>
+                 <td class="p-3 font-mono text-blue-600 hover-underline cursor-pointer" onclick="window.openUserHistory('${row.uid}')">${row.uid}</td>
+                 <td class="p-3 font-mono text-blue-600 hover-underline cursor-pointer" onclick="window.openKeyStatsModal('${row.keyId}')">${row.keyId}</td>
+                 <td class="p-3 text-xs"><span class="bg-gray-100 px-2 py-1 rounded">${row.mode}</span></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+
+        document.getElementById("link-stats-modal").style.display = "flex";
+      };
+
+      // ---- EXCEL EXPORT & LOGS FUNCTIONALITY ----
+      function generateReportData() {
+        const report = [];
+        Object.entries(allKeysData).forEach(([keyId, key]) => {
+          const linkName =
+            allLinksData[key.linkId]?.name || key.linkName || "Link đã xóa";
+          const mode =
+            key.mode === "single_use"
+              ? "1 Lần"
+              : key.mode === "limited_users"
+              ? `Giới hạn (${key.maxUses})`
+              : "Vĩnh viễn";
+
+          const users = key.allowedUsers || {};
+          if (key.usedBy && !users[key.usedBy])
+            users[key.usedBy] = key.usedAt || key.createdAt;
+
+          if (Object.keys(users).length > 0) {
+            Object.entries(users).forEach(([uid, ts]) => {
+              report.push({
+                time: ts,
+                timeStr: formatTimestamp(ts),
+                uid: uid,
+                keyId: keyId,
+                linkId: key.linkId,
+                linkName: linkName,
+                mode: mode,
+              });
+            });
           }
-          processRedeem(keyId, data);
-        } else {
-          document.getElementById("redeem-message").textContent =
-            "Key không tồn tại!";
-        }
+        });
+        return report.sort((a, b) => b.time - a.time);
       }
 
-      // Logic xử lý redeem và admin tương tự như file trước,
-      // tập trung vào việc hiển thị linkName lên Title sớm.
+      window.renderLogsTable = () => {
+        const searchTerm = document
+          .getElementById("logs-search")
+          .value.toLowerCase()
+          .trim();
+        const data = generateReportData();
+        const tbody = document.getElementById("logs-table-body");
 
-      async function processRedeem(keyId, keyData) {
-        // ... (Logic kiểm tra key, tăng click và chuyển hướng như trước)
-        const currentUserId = auth.currentUser.uid;
-        const allowedUsers = keyData.allowedUsers || {};
+        const filtered = data.filter(
+          (item) =>
+            item.uid.toLowerCase().includes(searchTerm) ||
+            item.keyId.toLowerCase().includes(searchTerm) ||
+            item.linkName.toLowerCase().includes(searchTerm)
+        );
 
-        if (allowedUsers[currentUserId]) {
-          redirect(keyId, keyData);
+        document.getElementById(
+          "logs-count-badge"
+        ).textContent = `${filtered.length} bản ghi`;
+        tbody.innerHTML = "";
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-500 italic">Không tìm thấy dữ liệu phù hợp.</td></tr>`;
           return;
         }
 
-        // Kiểm tra status và phân loại key...
-        // (Rút gọn để tập trung vào yêu cầu của bạn)
-        redirect(keyId, keyData);
-      }
+        const displayData = filtered.slice(0, 100);
+        displayData.forEach((row) => {
+          const tr = document.createElement("tr");
+          tr.className =
+            "hover:bg-gray-50 transition-colors border-b border-gray-100";
+          tr.innerHTML = `
+                <td class="p-4 whitespace-nowrap text-gray-600">${row.timeStr}</td>
+                <td class="p-4 font-mono text-xs font-bold text-blue-600 select-all hover-underline cursor-pointer" onclick="window.openUserHistory('${row.uid}')">${row.uid}</td>
+                <td class="p-4 font-mono text-xs select-all hover-underline cursor-pointer" onclick="window.openKeyStatsModal('${row.keyId}')">${row.keyId}</td>
+                <td class="p-4 max-w-xs truncate" title="${row.linkName}">${row.linkName}</td>
+                <td class="p-4"><span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">${row.mode}</span></td>
+            `;
+          tbody.innerHTML += tr.outerHTML;
+        });
+        if (filtered.length > 100)
+          tbody.innerHTML += `<tr><td colspan="5" class="p-3 text-center text-xs text-gray-400">...và ${
+            filtered.length - 100
+          } dòng khác</td></tr>`;
+      };
 
-      async function redirect(keyId, keyData) {
-        const linkSnap = await get(ref(db, `${linksPath}/${keyData.linkId}`));
-        if (linkSnap.exists()) {
-          const link = linkSnap.val();
-          document.getElementById("redeem-message").textContent =
-            "Key hợp lệ! Đang chuyển hướng...";
-          setTimeout(() => {
-            window.location.href = link.targetUrl;
-          }, 1000);
+      document
+        .getElementById("logs-search")
+        .addEventListener("input", window.renderLogsTable);
+
+      window.exportToExcel = () => {
+        const data = generateReportData();
+        if (data.length === 0) {
+          alert("Chưa có dữ liệu để xuất!");
+          return;
         }
-      }
+        const excelData = data.map((item) => ({
+          "Thời Gian": item.timeStr,
+          "User ID": item.uid,
+          "Key ID": item.keyId,
+          "Tên Link": item.linkName,
+          "Loại Key": item.mode,
+        }));
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        ws["!cols"] = [
+          { wch: 20 },
+          { wch: 35 },
+          { wch: 15 },
+          { wch: 30 },
+          { wch: 20 },
+        ];
+        XLSX.utils.book_append_sheet(wb, ws, "Lịch Sử Truy Cập");
+        XLSX.writeFile(
+          wb,
+          `Bao_Cao_Key_${new Date().toISOString().slice(0, 10)}.xlsx`
+        );
+      };
 
-      function loadAdmin() {
-        // ... (Logic load danh sách và form như cũ)
-        document.getElementById("add-link-form").onsubmit = async (e) => {
-          e.preventDefault();
-          const name = document.getElementById("link-name").value;
-          const url = document.getElementById("target-url").value;
-          await push(ref(db, linksPath), {
-            name,
-            targetUrl: url,
-            createdAt: serverTimestamp(),
-          });
-          e.target.reset();
-        };
+      // ---- MAIN FIREBASE LOGIC ----
+      async function init() {
+        const firebaseConfigStr =
+          typeof __firebase_config !== "undefined" ? __firebase_config : "{}";
+        let firebaseConfig;
+        try {
+          firebaseConfig = JSON.parse(firebaseConfigStr);
+          if (!firebaseConfig.apiKey) throw new Error("Missing Config");
+        } catch (e) {
+          console.warn("Fallback Config");
+          firebaseConfig = {
+            apiKey: "AIzaSyDnSzYda3CUXNtWrW8ytW2Wnx3mFunC9Ig",
+            authDomain: "uniquekey-a0912.firebaseapp.com",
+            databaseURL: "https://uniquekey-a0912-default-rtdb.firebaseio.com",
+            projectId: "uniquekey-a0912",
+            storageBucket: "uniquekey-a0912.firebasestorage.app",
+            messagingSenderId: "440795775727",
+            appId: "1:440795775727:web:1c59c88d5039f47a88d11a",
+          };
+        }
+        appId =
+          typeof __app_id !== "undefined"
+            ? __app_id
+            : "default-app-id-uniquekey";
 
-        onValue(ref(db, linksPath), (snap) => {
-          const list = document.getElementById("links-list");
-          list.innerHTML = "";
-          if (!snap.exists()) return;
-          Object.entries(snap.val()).forEach(([id, val]) => {
-            const div = document.createElement("div");
-            div.className = "p-3 bg-gray-50 border rounded mb-2";
-            div.innerHTML = `<strong>${val.name}</strong><br><button onclick="window.createKey('${id}', '${val.name}')" class="text-blue-500 text-sm">Tạo Key</button>`;
-            list.appendChild(div);
-          });
+        const app = initializeApp(firebaseConfig);
+        db = getDatabase(app);
+        auth = getAuth(app);
+
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            const STORAGE_KEY = "dienkon_sticky_user_id";
+            let savedId = localStorage.getItem(STORAGE_KEY);
+            if (savedId) userId = savedId;
+            else {
+              userId = user.uid;
+              localStorage.setItem(STORAGE_KEY, userId);
+            }
+
+            document.getElementById("user-id-display").textContent = userId;
+            if (redeemEl.userId) redeemEl.userId.textContent = `ID: ${userId}`;
+
+            linksPath = `artifacts/${appId}/public/data/links`;
+            keysPath = `artifacts/${appId}/public/data/keys`;
+
+            handleRouting();
+            window.onhashchange = handleRouting;
+          } else {
+            try {
+              if (
+                typeof __initial_auth_token !== "undefined" &&
+                __initial_auth_token
+              )
+                await signInWithCustomToken(auth, __initial_auth_token);
+              else await signInAnonymously(auth);
+            } catch (err) {
+              console.error(err);
+              views.loading.innerHTML =
+                '<p class="text-red-500">Lỗi xác thực hệ thống.</p>';
+            }
+          }
         });
       }
 
-      window.createKey = (id, name) => {
+      function handleRouting() {
+        const hash = window.location.hash;
+        if (hash.startsWith("#redeem?key=")) {
+          views.loading.style.display = "none";
+          views.admin.style.display = "none";
+          views.redeem.style.display = "flex";
+          handleRedeemKey(hash.split("key=")[1]);
+        } else {
+          document.title = "Admin - Quản Lý Key";
+          views.loading.style.display = "none";
+          views.redeem.style.display = "none";
+          views.admin.style.display = "block";
+          if (
+            views.adminContent.style.display === "none" &&
+            views.stats.style.display === "none" &&
+            views.logs.style.display === "none"
+          )
+            showView("admin-content");
+          loadAdminData();
+        }
+      }
+
+      async function handleRedeemKey(key) {
+        if (!key || !userId) return;
+        redeemEl.loader.style.display = "block";
+        redeemEl.msg.innerHTML = "Đang xác thực Key...";
+        redeemEl.msg.className =
+          "text-blue-800 font-medium text-base animate-pulse";
+        redeemEl.container.className =
+          "bg-blue-50 border border-blue-100 rounded-lg p-6 flex flex-col items-center justify-center min-h-[120px]";
+        await new Promise((r) => setTimeout(r, 1000));
+
+        const keyRef = ref(db, `${keysPath}/${key}`);
+        try {
+          const snap = await get(keyRef);
+          if (!snap.exists()) {
+            showRedeemError("Key không tồn tại hoặc sai!");
+            return;
+          }
+          const kData = snap.val();
+          if (kData.linkName) redeemEl.title.textContent = kData.linkName;
+
+          const allowedUsers = kData.allowedUsers || {};
+          const isOldUser = allowedUsers[userId] || kData.usedBy === userId;
+
+          if (isOldUser) {
+            redeemEl.msg.innerHTML = `<span class="text-indigo-600 font-bold">Chào mừng trở lại!</span><br><span class="text-xs text-gray-500">Đang chuyển hướng...</span>`;
+            redeemEl.container.className =
+              "bg-indigo-50 border border-indigo-200 rounded-lg p-6 flex flex-col items-center justify-center min-h-[120px]";
+            await update(keyRef, { totalClicks: (kData.totalClicks || 0) + 1 });
+            setTimeout(() => doRedirect(kData.linkId), 400);
+            return;
+          }
+
+          if (["used", "full", "expired"].includes(kData.status)) {
+            showRedeemError("Key đã hết lượt sử dụng.");
+            return;
+          }
+
+          let updates = {};
+          const userCount = Object.keys(allowedUsers).length;
+          if (kData.mode === "single_use") {
+            updates = {
+              status: "used",
+              usedAt: rtdbServerTimestamp(),
+              usedBy: userId,
+              [`allowedUsers/${userId}`]: rtdbServerTimestamp(),
+              totalClicks: (kData.totalClicks || 0) + 1,
+            };
+          } else if (kData.mode === "permanent_user") {
+            if (userCount > 0) {
+              showRedeemError("Key này đã thuộc về thiết bị khác.");
+              return;
+            }
+            updates = {
+              status: "claimed",
+              [`allowedUsers/${userId}`]: rtdbServerTimestamp(),
+              totalClicks: (kData.totalClicks || 0) + 1,
+            };
+          } else {
+            if (userCount >= kData.maxUses) {
+              showRedeemError("Key đã đủ số lượng người.");
+              return;
+            }
+            updates[`allowedUsers/${userId}`] = rtdbServerTimestamp();
+            updates.totalClicks = (kData.totalClicks || 0) + 1;
+            if (userCount + 1 >= kData.maxUses) updates.status = "full";
+          }
+          await update(keyRef, updates);
+          redeemEl.msg.innerHTML = `<span class="text-green-600 font-bold text-lg"><ion-icon name="checkmark-circle"></ion-icon> Thành công!</span>`;
+          redeemEl.loader.style.display = "none";
+          redeemEl.container.className =
+            "bg-green-50 border border-green-200 rounded-lg p-6 flex flex-col items-center justify-center min-h-[120px]";
+          setTimeout(() => doRedirect(kData.linkId), 800);
+        } catch (e) {
+          console.error(e);
+          showRedeemError("Lỗi kết nối Server.");
+        }
+      }
+
+      function showRedeemError(msg) {
+        redeemEl.loader.style.display = "none";
+        redeemEl.msg.innerHTML = `<span class="text-red-600 font-bold"><ion-icon name="alert-circle" class="text-xl align-middle"></ion-icon> ${msg}</span>`;
+        redeemEl.container.className =
+          "bg-red-50 border border-red-200 rounded-lg p-6 flex flex-col items-center justify-center min-h-[120px]";
+      }
+
+      async function doRedirect(linkId) {
+        const lRef = ref(db, `${linksPath}/${linkId}`);
+        const snap = await get(lRef);
+        if (snap.exists()) window.location.href = snap.val().targetUrl;
+        else showRedeemError("Link gốc đã bị xóa.");
+      }
+
+      function loadAdminData() {
+        if (!db) return;
+        onValue(ref(db, linksPath), (snap) => {
+          allLinksData = snap.exists() ? snap.val() : {};
+          renderLinksList();
+          renderKeysList();
+        });
+        onValue(ref(db, keysPath), (snap) => {
+          allKeysData = snap.exists() ? snap.val() : {};
+          renderKeysList();
+          updateStatsView();
+          if (views.logs.style.display === "block") renderLogsTable();
+        });
+      }
+
+      function renderLinksList() {
+        const list = document.getElementById("links-list");
+        if (Object.keys(allLinksData).length === 0) {
+          list.innerHTML =
+            '<p class="text-gray-400 text-center py-4 text-sm">Chưa có dữ liệu link.</p>';
+          return;
+        }
+        // const sorted = Object.entries(allLinksData).sort(
+        //   (a, b) => (b.createdAt || 0) - (a.createdAt || 0)
+        // );
+        const sorted = Object.entries(allLinksData).sort((a, b) => {
+          const timeA = a[1].createdAt ? new Date(a[1].createdAt).getTime() : 0;
+          const timeB = b[1].createdAt ? new Date(b[1].createdAt).getTime() : 0;
+          return timeB - timeA;
+        });
+
+        list.innerHTML = "";
+        sorted.forEach(([id, link]) => {
+          const div = document.createElement("div");
+          div.className =
+            "bg-gray-50 p-4 rounded-lg border border-gray-200 hover:shadow-md transition-all";
+          div.innerHTML = `
+                <div class="flex justify-between items-start mb-2"><h4 class="font-bold text-blue-700">${link.name}</h4></div>
+                <p class="text-xs text-gray-500 bg-white p-2 rounded border truncate mb-3 select-all">${link.targetUrl}</p>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="window.openConfigModal('${id}', '${link.name}')" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1.5 px-3 rounded flex items-center"><ion-icon name="key" class="mr-1"></ion-icon> Tạo Key</button>
+                    <button onclick="window.openEditLinkModal('${id}', '${link.name}', '${link.targetUrl}')" class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold py-1.5 px-3 rounded flex items-center"><ion-icon name="create" class="mr-1"></ion-icon> Sửa</button>
+                    <button onclick="window.openConfirmDelete('${id}', 'link')" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1.5 px-3 rounded flex items-center"><ion-icon name="trash" class="mr-1"></ion-icon> Xóa</button>
+                </div>`;
+          list.appendChild(div);
+        });
+      }
+
+      // ---- RENDER KEYS LIST (UPDATED TO MATCH ORIGINAL LAYOUT) ----
+      function renderKeysList() {
+        const searchTerm = document
+          .getElementById("search-key-input")
+          .value.toLowerCase();
+        const list = document.getElementById("keys-list");
+
+        let keys = Object.entries(allKeysData).map(([id, val]) => ({
+          id,
+          ...val,
+        }));
+        keys.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+        if (searchTerm)
+          keys = keys.filter(
+            (k) =>
+              k.id.toLowerCase().includes(searchTerm) ||
+              (k.note && k.note.toLowerCase().includes(searchTerm))
+          );
+        if (keys.length === 0) {
+          list.innerHTML =
+            '<p class="text-gray-400 text-center py-4 text-sm">Không tìm thấy key.</p>';
+          return;
+        }
+
+        list.innerHTML = "";
+        keys.forEach((k) => {
+          const linkName =
+            allLinksData[k.linkId]?.name || k.linkName || "Link đã xóa";
+          const noteHtml = k.note
+            ? `<p class="text-xs text-gray-500 italic mt-1"><ion-icon name="pencil-outline" class="mr-1 align-middle"></ion-icon>${k.note}</p>`
+            : "";
+
+          let statusText = "Active",
+            statusClass = "bg-green-100 text-green-700";
+          if (["used", "full", "expired"].includes(k.status)) {
+            statusText = "Hết hạn";
+            statusClass = "bg-red-100 text-red-700";
+          } else if (k.status === "claimed") {
+            statusText = "Đã nhận";
+            statusClass = "bg-purple-100 text-purple-700";
+          }
+
+          const count = k.allowedUsers ? Object.keys(k.allowedUsers).length : 0;
+          if (k.mode === "limited_users")
+            statusText += ` (${count}/${k.maxUses})`;
+
+          const div = document.createElement("div");
+          div.className =
+            "bg-white p-4 rounded-lg border shadow-sm hover:bg-gray-50 transition-colors";
+          div.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-mono text-sm font-bold text-blue-700 cursor-pointer hover:text-blue-500 flex items-center"
+                           onclick="window.copyKeyFromHistory('${k.id}', this)" title="Click để copy">
+                          <ion-icon name="copy-outline" class="mr-1"></ion-icon> ${k.id}
+                        </p>
+                        <p class="text-xs text-gray-600 mt-1">Link: <strong>${linkName}</strong></p>
+                        ${noteHtml}
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs px-2 py-1 rounded-full font-bold ${statusClass}">
+                            ${statusText}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-3 flex justify-between items-center border-t pt-2">
+                     <p class="text-xs text-gray-500 cursor-pointer hover:text-blue-600 font-semibold flex items-center" onclick="window.openKeyStatsModal('${k.id}')">
+                        <ion-icon name="eye" class="mr-1 text-base"></ion-icon> Chi tiết
+                     </p>
+                     <div class="flex gap-2">
+                        <button onclick="window.openEditKeyModal('${k.id}')" class="text-yellow-600 hover:text-yellow-800 text-xs font-bold px-2 py-1 rounded hover:bg-yellow-50">Sửa</button>
+                        <button onclick="window.openConfirmDelete('${k.id}', 'key')" class="text-red-600 hover:text-red-800 text-xs font-bold px-2 py-1 rounded hover:bg-red-50">Xóa</button>
+                    </div>
+                </div>
+              `;
+          list.appendChild(div);
+        });
+      }
+
+      document
+        .getElementById("search-key-input")
+        .addEventListener("input", renderKeysList);
+
+      function updateStatsView() {
+        const linkArr = Object.values(allLinksData);
+        const keyArr = Object.values(allKeysData);
+        animateValue(
+          document.getElementById("stats-total-links"),
+          0,
+          linkArr.length,
+          1000
+        );
+        animateValue(
+          document.getElementById("stats-total-keys"),
+          0,
+          keyArr.length,
+          1000
+        );
+        const totalClicks = keyArr.reduce(
+          (sum, k) => sum + (k.totalClicks || 0),
+          0
+        );
+        animateValue(
+          document.getElementById("stats-total-clicks"),
+          0,
+          totalClicks,
+          1000
+        );
+
+        const linkClicks = {};
+        keyArr.forEach((k) => {
+          if (k.linkId)
+            linkClicks[k.linkId] =
+              (linkClicks[k.linkId] || 0) + (k.totalClicks || 0);
+        });
+        const sortedLinks = Object.entries(linkClicks)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5);
+        const maxLinkVal = sortedLinks[0]?.[1] || 1;
+        const topLinksEl = document.getElementById("stats-top-links");
+        topLinksEl.innerHTML = sortedLinks.length
+          ? ""
+          : '<p class="text-gray-400 text-xs italic">Chưa có dữ liệu.</p>';
+        sortedLinks.forEach(([lid, val], idx) => {
+          const name = allLinksData[lid]?.name || "Link xóa/ẩn";
+          const pct = Math.round((val / maxLinkVal) * 100);
+          topLinksEl.innerHTML += `
+                 <div class="mb-3"><div class="flex justify-between text-xs mb-1 font-medium text-gray-700"><span>${
+                   idx + 1
+                 }. ${name}</span><span>${val} click</span></div>
+                 <div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-blue-500 h-2 rounded-full" style="width: ${pct}%"></div></div></div>`;
+        });
+
+        const sortedKeys = keyArr
+          .sort((a, b) => (b.totalClicks || 0) - (a.totalClicks || 0))
+          .slice(0, 5);
+        const maxKeyVal = sortedKeys[0]?.totalClicks || 1;
+        const topKeysEl = document.getElementById("stats-top-keys");
+        topKeysEl.innerHTML = sortedKeys[0]?.totalClicks
+          ? ""
+          : '<p class="text-gray-400 text-xs italic">Chưa có dữ liệu.</p>';
+        sortedKeys.forEach((k, idx) => {
+          if (k.totalClicks > 0) {
+            const pct = Math.round((k.totalClicks / maxKeyVal) * 100);
+            topKeysEl.innerHTML += `
+                 <div class="mb-3"><div class="flex justify-between text-xs mb-1 font-medium text-gray-700"><span class="font-mono text-blue-600">${k.id}</span><span>${k.totalClicks} click</span></div>
+                 <div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-red-500 h-2 rounded-full" style="width: ${pct}%"></div></div></div>`;
+          }
+        });
+      }
+
+      function animateValue(obj, start, end, duration) {
+        if (!obj) return;
+        let startTimestamp = null;
+        const step = (timestamp) => {
+          if (!startTimestamp) startTimestamp = timestamp;
+          const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+          obj.innerHTML = Math.floor(progress * (end - start) + start);
+          if (progress < 1) window.requestAnimationFrame(step);
+        };
+        window.requestAnimationFrame(step);
+      }
+
+      document.getElementById("add-link-form").onsubmit = async (e) => {
+        e.preventDefault();
+        await push(ref(db, linksPath), {
+          name: document.getElementById("link-name").value,
+          targetUrl: document.getElementById("target-url").value,
+          createdAt: rtdbServerTimestamp(),
+        });
+        e.target.reset();
+      };
+      window.openEditLinkModal = (id, name, url) => {
+        document.getElementById("edit-link-id").value = id;
+        document.getElementById("edit-link-name").value = name;
+        document.getElementById("edit-target-url").value = url;
+        document.getElementById("edit-link-modal").style.display = "flex";
+      };
+      document.getElementById("edit-link-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById("edit-link-id").value;
+        await update(ref(db, `${linksPath}/${id}`), {
+          name: document.getElementById("edit-link-name").value,
+          targetUrl: document.getElementById("edit-target-url").value,
+        });
+        closeModal("edit-link-modal");
+      };
+      window.openConfigModal = (id, name) => {
         document.getElementById("config-link-id").value = id;
         document.getElementById("config-link-name").textContent = name;
-        document
-          .getElementById("generate-key-config-modal")
-          .classList.remove("hidden");
+        document.getElementById("key-limit-group").style.display = "none";
+        document.getElementById("generate-key-form").reset();
         document.getElementById("generate-key-config-modal").style.display =
           "flex";
       };
-
+      document.querySelectorAll('input[name="keyMode"]').forEach((r) => {
+        r.onchange = (e) => {
+          document.getElementById("key-limit-group").style.display =
+            e.target.value === "limited_users" ? "block" : "none";
+        };
+      });
       document.getElementById("generate-key-form").onsubmit = async (e) => {
         e.preventDefault();
         const linkId = document.getElementById("config-link-id").value;
         const linkName =
           document.getElementById("config-link-name").textContent;
-        const mode = e.target.keyMode.value;
-        const keyId = Math.random().toString(36).substring(7);
-
-        await set(ref(db, `${keysPath}/${keyId}`), {
+        const mode = document.querySelector(
+          'input[name="keyMode"]:checked'
+        ).value;
+        const note = document.getElementById("key-note").value;
+        let data = {
           linkId,
           linkName,
           mode,
+          note,
           status: "active",
-          createdAt: serverTimestamp(),
+          createdAt: rtdbServerTimestamp(),
+          totalClicks: 0,
+        };
+        if (mode === "limited_users")
+          data.maxUses =
+            parseInt(document.getElementById("key-limit-input").value) || 1;
+        const key = Math.random().toString(36).substring(2, 10).toUpperCase();
+        await set(ref(db, `${keysPath}/${key}`), data);
+        closeModal("generate-key-config-modal");
+        const baseUrl = window.location.href.split("#")[0];
+        document.getElementById(
+          "generated-key-link"
+        ).value = `${baseUrl}#redeem?key=${key}`;
+        document.getElementById("generated-key-modal").style.display = "flex";
+        document.getElementById("copy-success").style.display = "none";
+      };
+      window.copyKeyLink = () => {
+        const el = document.getElementById("generated-key-link");
+        el.select();
+        document.execCommand("copy");
+        const succ = document.getElementById("copy-success");
+        succ.style.display = "block";
+        setTimeout(() => (succ.style.display = "none"), 2000);
+      };
+      window.copyKeyFromHistory = (key, btn) => {
+        const baseUrl = window.location.href.split("#")[0];
+        const val = `${baseUrl}#redeem?key=${key}`;
+        const ta = document.createElement("textarea");
+        ta.value = val;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        const oldHTML = btn.innerHTML;
+        btn.innerHTML = "Copied!";
+        btn.classList.add("text-green-600");
+        setTimeout(() => {
+          btn.innerHTML = oldHTML;
+          btn.classList.remove("text-green-600");
+        }, 1000);
+      };
+      window.openEditKeyModal = (id) => {
+        const k = allKeysData[id];
+        document.getElementById("edit-key-id").value = id;
+        document.getElementById("edit-key-id-display").textContent = id;
+        document.getElementById("edit-key-link-name").textContent =
+          k.linkName || "...";
+        document.getElementById("edit-key-note").value = k.note || "";
+        const limitGroup = document.getElementById("edit-key-limit-group");
+        if (k.mode === "limited_users") {
+          limitGroup.style.display = "block";
+          document.getElementById("edit-key-limit-input").value = k.maxUses;
+        } else {
+          limitGroup.style.display = "none";
+        }
+        document.getElementById("edit-key-modal").style.display = "flex";
+      };
+      document.getElementById("edit-key-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById("edit-key-id").value;
+        const note = document.getElementById("edit-key-note").value;
+        let updates = { note };
+        const k = allKeysData[id];
+        if (k.mode === "limited_users") {
+          const newMax = parseInt(
+            document.getElementById("edit-key-limit-input").value
+          );
+          updates.maxUses = newMax;
+          const curUsers = k.allowedUsers
+            ? Object.keys(k.allowedUsers).length
+            : 0;
+          if (curUsers < newMax && k.status === "full")
+            updates.status = "active";
+        }
+        await update(ref(db, `${keysPath}/${id}`), updates);
+        closeModal("edit-key-modal");
+      };
+      document.getElementById("reset-key-btn").onclick = async () => {
+        const id = document.getElementById("edit-key-id").value;
+        await update(ref(db, `${keysPath}/${id}`), {
+          status: "active",
+          allowedUsers: null,
+          usedBy: null,
+          usedAt: null,
           totalClicks: 0,
         });
-
-        document.getElementById("generate-key-config-modal").style.display =
-          "none";
-        const finalUrl = `${window.location.origin}${window.location.pathname}#redeem?key=${keyId}`;
-        prompt("Copy link này gửi qua Zalo:", finalUrl);
+        alert("Đã reset key về trạng thái mới!");
+        closeModal("edit-key-modal");
+      };
+      window.openConfirmDelete = (id, type) => {
+        const btn = document.getElementById("confirm-delete-btn");
+        const msg = document.getElementById("confirm-message");
+        btn.dataset.id = id;
+        btn.dataset.type = type;
+        if (type === "link")
+          msg.textContent =
+            "Cảnh báo: Xóa Link sẽ làm hỏng tất cả các Key liên quan!";
+        else
+          msg.textContent =
+            "Xóa Key này vĩnh viễn? Dữ liệu thống kê của Key này cũng sẽ mất.";
+        document.getElementById("confirm-modal").style.display = "flex";
+      };
+      document.getElementById("confirm-delete-btn").onclick = async (e) => {
+        const id = e.target.dataset.id;
+        const type = e.target.dataset.type;
+        const p = type === "link" ? linksPath : keysPath;
+        await remove(ref(db, `${p}/${id}`));
+        closeModal("confirm-modal");
       };
 
       init();

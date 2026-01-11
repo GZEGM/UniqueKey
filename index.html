@@ -4,11 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hệ Thống Quản Lý Key</title>
-    <!-- Thêm Meta Default cho trang chủ -->
-    <meta property="og:title" content="Key" />
-    <meta property="og:description" content="Dienkon Key" />
+    <meta property="og:title" content="Key Access" />
+    <meta property="og:description" content="Secure Link System" />
 
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Ionicons -->
     <script
       type="module"
       src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"
@@ -17,20 +19,16 @@
       nomodule
       src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"
     ></script>
+
+    <!-- SheetJS để xuất Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
     <style>
       /* CSS cho hiệu ứng loading */
       .loader {
         border-top-color: #3b82f6; /* blue-500 */
         -webkit-animation: spin 1s linear infinite;
         animation: spin 1s linear infinite;
-      }
-      @-webkit-keyframes spin {
-        0% {
-          -webkit-transform: rotate(0deg);
-        }
-        100% {
-          -webkit-transform: rotate(360deg);
-        }
       }
       @keyframes spin {
         0% {
@@ -40,13 +38,16 @@
           transform: rotate(360deg);
         }
       }
+
       /* Ẩn các view ban đầu */
       #admin-view,
       #redeem-view,
       #loading-view,
-      #stats-view {
+      #stats-view,
+      #logs-view {
         display: none;
       }
+
       /* Style cho modal config key */
       #key-limit-group.hidden,
       #edit-key-limit-group.hidden {
@@ -55,16 +56,21 @@
 
       /* Style cho tab active */
       .tab-active {
-        border-bottom-color: #3b82f6; /* blue-500 */
+        border-bottom: 2px solid #3b82f6;
         color: #3b82f6;
         font-weight: 600;
+        background-color: rgba(59, 130, 246, 0.05);
       }
       .tab-inactive {
-        border-bottom-color: transparent;
-        color: #6b7280; /* gray-500 */
+        border-bottom: 2px solid transparent;
+        color: #6b7280;
+      }
+      .tab-inactive:hover {
+        color: #374151;
+        background-color: rgba(0, 0, 0, 0.02);
       }
 
-      /* Animation cho Redeem Card */
+      /* Animation */
       .fade-in-up {
         animation: fadeInUp 0.5s ease-out forwards;
       }
@@ -78,6 +84,7 @@
           transform: translateY(0);
         }
       }
+
       /* Custom scrollbar */
       .custom-scrollbar::-webkit-scrollbar {
         width: 6px;
@@ -93,22 +100,25 @@
         background: #94a3b8;
       }
 
-      /* VIP Stats Styles */
-      .stat-card {
-        transition: transform 0.2s;
+      /* Table Sticky Header */
+      .table-sticky-header th {
+        position: sticky;
+        top: 0;
+        background-color: #f9fafb;
+        z-index: 10;
       }
-      .stat-card:hover {
-        transform: translateY(-5px);
-      }
-      .progress-bar {
-        transition: width 1s ease-in-out;
+
+      /* Hover underline for clickable items */
+      .hover-underline:hover {
+        text-decoration: underline;
+        cursor: pointer;
       }
     </style>
   </head>
   <body
     class="bg-gray-100 font-sans leading-normal tracking-normal text-gray-800"
   >
-    <!-- ==== LOADING VIEW ==== -->
+    <!-- ==== LOADING VIEW (Initial) ==== -->
     <div
       id="loading-view"
       class="flex justify-center items-center min-h-screen"
@@ -118,7 +128,7 @@
       ></div>
     </div>
 
-    <!-- ==== REDEEM VIEW (GIAO DIỆN GIỐNG AZOTA) ==== -->
+    <!-- ==== REDEEM VIEW (User) ==== -->
     <div
       id="redeem-view"
       class="min-h-screen flex items-center justify-center bg-gray-50 p-4"
@@ -126,52 +136,52 @@
       <div
         class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden fade-in-up border border-gray-100"
       >
-        <!-- Header màu mè một chút -->
+        <!-- Header -->
         <div
           class="bg-gradient-to-r from-blue-500 to-indigo-600 h-24 flex items-center justify-center relative"
         >
           <div class="bg-white p-4 rounded-full shadow-lg absolute -bottom-10">
             <ion-icon
-              name="document-text"
+              name="shield-checkmark"
               class="text-5xl text-blue-600"
             ></ion-icon>
           </div>
         </div>
 
         <div class="pt-14 pb-8 px-8 text-center">
-          <!-- Tên mô tả link -->
           <h1
             id="redeem-title"
             class="text-2xl font-bold text-gray-800 mb-2 leading-tight"
           >
             Đang tải thông tin...
           </h1>
-
           <p
             class="text-sm text-gray-500 mb-6 uppercase tracking-wide font-semibold"
           >
-            Xác thực truy cập
+            Xác thực truy cập an toàn
           </p>
 
           <div class="space-y-4">
-            <!-- Khu vực hiển thị trạng thái/Loading -->
+            <!-- Loading / Status Box -->
             <div
               id="status-container"
-              class="bg-blue-50 border border-blue-100 rounded-lg p-4 flex flex-col items-center justify-center min-h-[100px]"
+              class="bg-blue-50 border border-blue-100 rounded-lg p-6 flex flex-col items-center justify-center min-h-[120px] transition-all duration-300"
             >
               <div
                 id="redeem-loader"
-                class="loader ease-linear rounded-full border-4 border-t-4 border-blue-400 h-8 w-8 mb-3"
+                class="loader ease-linear rounded-full border-4 border-t-4 border-blue-400 h-10 w-10 mb-4"
               ></div>
-              <p id="redeem-message" class="text-blue-800 font-medium text-sm">
+              <p
+                id="redeem-message"
+                class="text-blue-800 font-medium text-base animate-pulse"
+              >
                 Đang kiểm tra Key...
               </p>
             </div>
           </div>
 
-          <!-- Footer nhỏ -->
           <div class="mt-8 text-xs text-gray-400">
-            Powered by Dienkon <br />
+            Hệ thống bảo mật bởi Dienkon<br />
             <span id="redeem-user-id" class="text-[10px] opacity-50"
               >ID: ...</span
             >
@@ -183,158 +193,176 @@
     <!-- ==== ADMIN VIEW ==== -->
     <div id="admin-view" class="container mx-auto max-w-7xl p-4 md:p-8">
       <!-- Header -->
-      <header class="mb-6 flex justify-between items-end">
+      <header
+        class="mb-6 flex flex-col md:flex-row justify-between items-end gap-4"
+      >
         <div>
-          <h1 class="text-4xl font-bold text-gray-800">Quản Lý Key</h1>
-          <p class="text-lg text-gray-600">
-            Hệ thống tạo và phân phối link an toàn.
-          </p>
+          <h1 class="text-3xl md:text-4xl font-bold text-gray-800">
+            Quản Lý Key
+          </h1>
+          <p class="text-gray-600">Hệ thống phân phối và thống kê truy cập.</p>
         </div>
-        <div class="text-right hidden md:block">
-          <p class="text-xs text-gray-500 uppercase font-bold">Your ID</p>
+        <div class="text-right flex flex-col items-end">
+          <p class="text-xs text-gray-500 uppercase font-bold">Admin ID</p>
           <code
             id="user-id-display"
-            class="bg-gray-200 px-2 py-1 rounded text-sm text-gray-700"
+            class="bg-white border px-2 py-1 rounded text-sm text-gray-700 shadow-sm"
             >...</code
           >
         </div>
       </header>
 
       <!-- Tab Navigation -->
-      <nav class="flex border-b-2 border-gray-200 mb-6">
+      <nav
+        class="flex border-b border-gray-200 mb-6 bg-white rounded-t-lg shadow-sm overflow-x-auto"
+      >
         <button
           id="admin-tab"
           onclick="showView('admin-content')"
-          class="py-3 px-5 text-lg tab-active transition-colors duration-200"
+          class="py-3 px-6 text-sm md:text-base font-medium tab-active transition-all whitespace-nowrap"
         >
-          <ion-icon name="list-outline" class="mr-2 align-middle"></ion-icon>
-          Quản Lý
+          <ion-icon
+            name="layers-outline"
+            class="mr-2 align-middle text-lg"
+          ></ion-icon
+          >Quản Lý
         </button>
         <button
           id="stats-tab"
           onclick="showView('stats-view')"
-          class="py-3 px-5 text-lg tab-inactive transition-colors duration-200"
+          class="py-3 px-6 text-sm md:text-base font-medium tab-inactive transition-all whitespace-nowrap"
         >
           <ion-icon
-            name="stats-chart-outline"
-            class="mr-2 align-middle"
-          ></ion-icon>
-          Thống Kê VIP
+            name="pie-chart-outline"
+            class="mr-2 align-middle text-lg"
+          ></ion-icon
+          >Tổng Quan
+        </button>
+        <button
+          id="logs-tab"
+          onclick="showView('logs-view')"
+          class="py-3 px-6 text-sm md:text-base font-medium tab-inactive transition-all whitespace-nowrap"
+        >
+          <ion-icon
+            name="people-outline"
+            class="mr-2 align-middle text-lg"
+          ></ion-icon
+          >Lịch Sử User
         </button>
       </nav>
 
-      <!-- ==== ADMIN CONTENT VIEW (Quản Lý) ==== -->
+      <!-- ==== 1. ADMIN CONTENT (Quản Lý Link/Key) ==== -->
       <div id="admin-content">
         <div class="flex flex-col md:flex-row gap-8">
-          <!-- Cột Trái: Thêm Link & Danh Sách Link -->
+          <!-- Cột Trái: Thêm Link & Danh Sách -->
           <div class="w-full md:w-5/12">
+            <!-- Form Thêm Link -->
             <div
-              class="bg-white p-6 rounded-lg shadow-lg mb-8 border-t-4 border-blue-500"
+              class="bg-white p-6 rounded-xl shadow-md mb-8 border-t-4 border-blue-500"
             >
               <h2
-                class="text-xl font-bold text-gray-800 mb-4 flex items-center"
+                class="text-lg font-bold text-gray-800 mb-4 flex items-center"
               >
                 <ion-icon
                   name="add-circle"
-                  class="text-blue-500 mr-2 text-2xl"
-                ></ion-icon>
-                Thêm Link Gốc
+                  class="text-blue-500 mr-2 text-xl"
+                ></ion-icon
+                >Thêm Link Gốc
               </h2>
               <form id="add-link-form">
                 <div class="mb-4">
                   <label
-                    for="link-name"
-                    class="block text-gray-700 font-bold mb-2 text-sm"
-                    >Tên mô tả (Hiển thị khi nhập Key)</label
+                    class="block text-gray-700 font-bold mb-1 text-xs uppercase"
+                    >Tên hiển thị</label
                   >
                   <input
                     type="text"
                     id="link-name"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
-                    placeholder="VD: Đề thi Toán HK1..."
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    placeholder="VD: Tài liệu Toán 12..."
                     required
                   />
                 </div>
                 <div class="mb-4">
                   <label
-                    for="target-url"
-                    class="block text-gray-700 font-bold mb-2 text-sm"
-                    >Link Gốc (Google Drive, Azota...)</label
+                    class="block text-gray-700 font-bold mb-1 text-xs uppercase"
+                    >Link Đích (URL)</label
                   >
                   <input
                     type="url"
                     id="target-url"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                     placeholder="https://..."
                     required
                   />
                 </div>
                 <button
                   type="submit"
-                  class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all"
                 >
                   Thêm Link Mới
                 </button>
               </form>
             </div>
 
+            <!-- Danh Sách Link -->
             <div
-              class="bg-white p-6 rounded-lg shadow-lg border-t-4 border-gray-500"
+              class="bg-white p-6 rounded-xl shadow-md border-t-4 border-gray-500"
             >
               <h2
-                class="text-xl font-bold text-gray-800 mb-4 flex items-center"
+                class="text-lg font-bold text-gray-800 mb-4 flex items-center"
               >
                 <ion-icon
                   name="library"
-                  class="text-gray-600 mr-2 text-2xl"
-                ></ion-icon>
-                Danh Sách Link
+                  class="text-gray-600 mr-2 text-xl"
+                ></ion-icon
+                >Kho Link
               </h2>
               <div
                 id="links-list"
-                class="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar"
+                class="space-y-3 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar"
               >
-                <p class="text-gray-500 text-center py-4">Chưa có link nào.</p>
+                <p class="text-gray-400 text-center py-4 text-sm">
+                  Chưa có dữ liệu link.
+                </p>
               </div>
             </div>
           </div>
 
-          <!-- Cột Phải: Lịch Sử Key -->
+          <!-- Cột Phải: Danh Sách Key -->
           <div class="w-full md:w-7/12">
             <div
-              class="bg-white p-6 rounded-lg shadow-lg h-full border-t-4 border-green-500 flex flex-col"
+              class="bg-white p-6 rounded-xl shadow-md h-full border-t-4 border-green-500 flex flex-col"
             >
-              <!-- Header và Tìm Kiếm -->
               <div class="mb-4 pb-4 border-b">
-                <div class="flex justify-between items-center mb-4">
-                  <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                <div class="flex justify-between items-center mb-3">
+                  <h2 class="text-lg font-bold text-gray-800 flex items-center">
                     <ion-icon
-                      name="time"
-                      class="text-green-600 mr-2 text-2xl"
-                    ></ion-icon>
-                    Danh Sách Key
+                      name="key"
+                      class="text-green-600 mr-2 text-xl"
+                    ></ion-icon
+                    >Danh Sách Key
                   </h2>
                   <span
                     class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded"
                     >Mới nhất trên cùng</span
                   >
                 </div>
-
-                <!-- Tìm kiếm Key -->
+                <!-- Search Key -->
                 <div class="relative">
-                  <div
+                  <span
                     class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
                   >
                     <ion-icon
                       name="search-outline"
-                      class="text-gray-400 text-lg"
+                      class="text-gray-400"
                     ></ion-icon>
-                  </div>
+                  </span>
                   <input
                     type="text"
                     id="search-key-input"
-                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="Tìm kiếm: Dán link key hoặc nhập ID..."
+                    class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                    placeholder="Tìm kiếm Key, Note hoặc ID..."
                   />
                 </div>
               </div>
@@ -344,121 +372,157 @@
                 class="space-y-3 overflow-y-auto flex-grow custom-scrollbar"
                 style="max-height: 800px"
               >
-                <p class="text-gray-500 text-center py-8">Chưa tạo key nào.</p>
+                <p class="text-gray-400 text-center py-10">
+                  Chưa có key nào được tạo.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ==== STATS VIEW (Thống Kê VIP) ==== -->
-      <div id="stats-view" class="hidden">
+      <!-- ==== 2. STATS VIEW (Thống Kê Tổng Quan) ==== -->
+      <div id="stats-view">
         <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
           <div
-            class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white stat-card"
+            class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform"
           >
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-start">
               <div>
                 <p
-                  class="text-blue-100 text-sm font-medium uppercase tracking-wider"
+                  class="text-blue-100 text-xs font-bold uppercase tracking-wider"
                 >
-                  Tổng Link
+                  Tổng Link Gốc
                 </p>
-                <p id="stats-total-links" class="text-4xl font-bold mt-1">0</p>
+                <p id="stats-total-links" class="text-4xl font-bold mt-2">0</p>
               </div>
-              <div class="bg-white bg-opacity-20 p-3 rounded-lg">
-                <ion-icon name="link-outline" class="text-3xl"></ion-icon>
+              <div class="bg-white bg-opacity-20 p-2 rounded-lg">
+                <ion-icon name="link" class="text-2xl"></ion-icon>
               </div>
-            </div>
-            <div class="mt-4 text-xs text-blue-100 opacity-80">
-              Hệ thống đang hoạt động
             </div>
           </div>
-
           <div
-            class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white stat-card"
+            class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform"
           >
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-start">
               <div>
                 <p
-                  class="text-green-100 text-sm font-medium uppercase tracking-wider"
+                  class="text-green-100 text-xs font-bold uppercase tracking-wider"
                 >
-                  Tổng Key
+                  Tổng Key Đã Tạo
                 </p>
-                <p id="stats-total-keys" class="text-4xl font-bold mt-1">0</p>
+                <p id="stats-total-keys" class="text-4xl font-bold mt-2">0</p>
               </div>
-              <div class="bg-white bg-opacity-20 p-3 rounded-lg">
-                <ion-icon name="key-outline" class="text-3xl"></ion-icon>
+              <div class="bg-white bg-opacity-20 p-2 rounded-lg">
+                <ion-icon name="key" class="text-2xl"></ion-icon>
               </div>
-            </div>
-            <div class="mt-4 text-xs text-green-100 opacity-80">
-              Keys đã được tạo ra
             </div>
           </div>
-
           <div
-            class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white stat-card"
+            class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform"
           >
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-start">
               <div>
                 <p
-                  class="text-purple-100 text-sm font-medium uppercase tracking-wider"
+                  class="text-purple-100 text-xs font-bold uppercase tracking-wider"
                 >
-                  Tổng Lượt Click
+                  Lượt Truy Cập
                 </p>
-                <p id="stats-total-clicks" class="text-4xl font-bold mt-1">0</p>
+                <p id="stats-total-clicks" class="text-4xl font-bold mt-2">0</p>
               </div>
-              <div class="bg-white bg-opacity-20 p-3 rounded-lg">
-                <ion-icon name="analytics-outline" class="text-3xl"></ion-icon>
+              <div class="bg-white bg-opacity-20 p-2 rounded-lg">
+                <ion-icon name="analytics" class="text-2xl"></ion-icon>
               </div>
-            </div>
-            <div class="mt-4 text-xs text-purple-100 opacity-80">
-              Truy cập thành công
             </div>
           </div>
         </div>
 
-        <!-- Charts / Lists -->
+        <!-- Charts Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <!-- Top Links -->
-          <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-            <div class="flex items-center justify-between mb-6 pb-2 border-b">
-              <h3 class="text-xl font-bold text-gray-800 flex items-center">
-                <ion-icon
-                  name="trophy-outline"
-                  class="text-yellow-500 mr-2"
-                ></ion-icon>
-                Top Link Phổ Biến
-              </h3>
-              <span class="text-xs font-semibold text-gray-500 uppercase"
-                >Top 5</span
+          <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+              <ion-icon name="trophy" class="text-yellow-500 mr-2"></ion-icon
+              >Top 5 Link Phổ Biến
+            </h3>
+            <div id="stats-top-links" class="space-y-4"></div>
+          </div>
+          <!-- Top Keys -->
+          <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+              <ion-icon name="flame" class="text-red-500 mr-2"></ion-icon>Top 5
+              Key Hoạt Động
+            </h3>
+            <div id="stats-top-keys" class="space-y-4"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==== 3. LOGS VIEW (Lịch Sử User) ==== -->
+      <div id="logs-view">
+        <div
+          class="bg-white rounded-xl shadow-md border border-gray-200 flex flex-col h-[calc(100vh-200px)]"
+        >
+          <!-- Toolbar -->
+          <div
+            class="p-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50 rounded-t-xl"
+          >
+            <div class="flex items-center gap-2">
+              <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                <ion-icon name="list" class="text-indigo-600 mr-2"></ion-icon
+                >Lịch Sử User Truy Cập
+              </h2>
+              <span
+                id="logs-count-badge"
+                class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded-full"
+                >0 bản ghi</span
               >
             </div>
-            <div id="stats-top-links" class="space-y-5">
-              <!-- Content injected via JS -->
-              <p class="text-gray-500 text-center py-4">Đang tính toán...</p>
+
+            <div class="flex gap-2 w-full md:w-auto">
+              <input
+                type="text"
+                id="logs-search"
+                class="flex-1 md:w-64 px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Lọc theo User ID hoặc Key..."
+              />
+              <button
+                onclick="exportToExcel()"
+                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center shadow transition-colors whitespace-nowrap"
+              >
+                <ion-icon name="document-text" class="mr-2"></ion-icon>Xuất
+                Excel
+              </button>
             </div>
           </div>
 
-          <!-- Top Keys -->
-          <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-            <div class="flex items-center justify-between mb-6 pb-2 border-b">
-              <h3 class="text-xl font-bold text-gray-800 flex items-center">
-                <ion-icon
-                  name="flame-outline"
-                  class="text-red-500 mr-2"
-                ></ion-icon>
-                Top Key Hoạt Động
-              </h3>
-              <span class="text-xs font-semibold text-gray-500 uppercase"
-                >Top 5</span
+          <!-- Table Wrapper -->
+          <div class="flex-grow overflow-auto custom-scrollbar">
+            <table class="w-full text-left border-collapse">
+              <thead
+                class="bg-gray-100 text-gray-600 text-xs uppercase font-bold table-sticky-header"
               >
-            </div>
-            <div id="stats-top-keys" class="space-y-4">
-              <!-- Content injected via JS -->
-              <p class="text-gray-500 text-center py-4">Đang tính toán...</p>
-            </div>
+                <tr>
+                  <th class="p-4 border-b">Thời gian</th>
+                  <th class="p-4 border-b">User ID (Thiết bị)</th>
+                  <th class="p-4 border-b">Key Sử Dụng</th>
+                  <th class="p-4 border-b">Link Gốc</th>
+                  <th class="p-4 border-b">Loại Key</th>
+                </tr>
+              </thead>
+              <tbody
+                id="logs-table-body"
+                class="text-sm text-gray-700 divide-y divide-gray-100"
+              >
+                <!-- Data injected via JS -->
+                <tr>
+                  <td colspan="5" class="p-6 text-center text-gray-500">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -466,58 +530,62 @@
 
     <!-- ==== MODALS ==== -->
 
-    <!-- Modal: Tạo Key Thành Công -->
+    <!-- Modal: Key Created Success -->
     <div
       id="generated-key-modal"
-      class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm transition-opacity"
     >
       <div
-        class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg transform transition-all scale-100"
+        class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg transform scale-100 transition-transform"
       >
         <div class="flex justify-between items-center mb-6">
-          <h3 class="text-2xl font-bold text-green-600 flex items-center">
-            <ion-icon name="checkmark-circle" class="mr-2"></ion-icon>
-            Tạo Key Thành Công
+          <h3 class="text-xl font-bold text-green-600 flex items-center">
+            <ion-icon name="checkmark-circle" class="mr-2 text-2xl"></ion-icon
+            >Tạo Key Thành Công
           </h3>
           <button
             onclick="closeModal('generated-key-modal')"
-            class="text-gray-400 hover:text-gray-600 transition-colors"
+            class="text-gray-400 hover:text-gray-600"
           >
-            <ion-icon name="close-outline" class="text-3xl"></ion-icon>
+            <ion-icon name="close" class="text-2xl"></ion-icon>
           </button>
         </div>
-        <p class="text-gray-700 mb-4">
-          Sao chép link dưới đây và gửi cho người dùng:
-        </p>
-        <div class="relative group">
+        <div class="relative group mb-2">
           <input
             id="generated-key-link"
             type="text"
             readonly
-            class="w-full p-4 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 pr-14 font-mono text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
+            class="w-full p-4 bg-gray-50 border border-gray-300 rounded-lg text-gray-800 pr-14 font-mono text-sm focus:ring-2 focus:ring-green-500 outline-none"
           />
           <button
             onclick="copyKeyLink()"
-            class="absolute right-2 top-1/2 -translate-y-1/2 bg-white hover:bg-gray-100 text-gray-700 p-2 rounded-lg border shadow-sm transition-all"
+            class="absolute right-2 top-1/2 -translate-y-1/2 bg-white hover:bg-gray-100 p-2 rounded-lg border shadow-sm"
             title="Sao chép"
           >
-            <ion-icon name="copy-outline" class="text-lg"></ion-icon>
+            <ion-icon name="copy-outline"></ion-icon>
           </button>
         </div>
         <p
           id="copy-success"
-          class="text-green-500 text-sm mt-2 font-semibold hidden flex items-center"
+          class="text-green-500 text-xs font-bold h-4 mb-4 text-right hidden"
         >
-          <ion-icon name="checkmark" class="mr-1"></ion-icon> Đã sao chép vào bộ
-          nhớ tạm!
+          <ion-icon name="checkmark"></ion-icon> Đã sao chép!
         </p>
+        <div class="text-center">
+          <button
+            onclick="closeModal('generated-key-modal')"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg"
+          >
+            Đóng
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Modal: Cấu Hình Key Mới -->
+    <!-- Modal: Config New Key -->
     <div
       id="generate-key-config-modal"
-      class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
     >
       <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
         <div class="flex justify-between items-center mb-4">
@@ -526,267 +594,120 @@
             onclick="closeModal('generate-key-config-modal')"
             class="text-gray-400 hover:text-gray-600"
           >
-            <ion-icon name="close-outline" class="text-3xl"></ion-icon>
+            <ion-icon name="close" class="text-2xl"></ion-icon>
           </button>
         </div>
         <div class="bg-blue-50 p-3 rounded-lg mb-4 border border-blue-100">
-          <p class="text-gray-600 text-sm">Đang tạo key cho:</p>
+          <p class="text-xs text-blue-500 uppercase font-bold">Key cho link:</p>
           <p
             id="config-link-name"
-            class="font-bold text-blue-700 text-lg truncate"
+            class="font-bold text-blue-800 text-lg truncate"
           >
             ...
           </p>
         </div>
-
         <form id="generate-key-form">
           <input type="hidden" id="config-link-id" />
           <div class="mb-4">
-            <label class="block text-gray-700 font-bold mb-3"
-              >Chọn Loại Key:</label
+            <label class="block text-gray-700 font-bold mb-2 text-sm"
+              >Loại Key</label
             >
-            <div class="space-y-3">
+            <div class="grid grid-cols-1 gap-3">
               <label
-                class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
               >
                 <input
                   type="radio"
                   name="keyMode"
                   value="single_use"
-                  class="form-radio text-blue-600 h-5 w-5"
+                  class="text-blue-600 h-5 w-5"
                   checked
                 />
                 <div class="ml-3">
-                  <span class="block text-gray-800 font-medium"
-                    >1 Lần Dùng</span
-                  >
+                  <span class="block font-medium text-sm">1 Lần Dùng</span>
                   <span class="block text-gray-500 text-xs"
-                    >Hết hạn sau khi click. Không thể truy cập lại nếu dùng máy
-                    khác.</span
+                    >Vô hiệu hóa ngay sau khi dùng.</span
                   >
                 </div>
               </label>
               <label
-                class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
               >
                 <input
                   type="radio"
                   name="keyMode"
                   value="limited_users"
-                  class="form-radio text-blue-600 h-5 w-5"
+                  class="text-blue-600 h-5 w-5"
                 />
                 <div class="ml-3">
-                  <span class="block text-gray-800 font-medium"
-                    >Giới Hạn Người</span
+                  <span class="block font-medium text-sm"
+                    >Giới Hạn Số Lượng</span
                   >
                   <span class="block text-gray-500 text-xs"
-                    >Cho phép số lượng người nhất định.</span
+                    >Cho phép N người dùng khác nhau.</span
                   >
                 </div>
               </label>
               <label
-                class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
               >
                 <input
                   type="radio"
                   name="keyMode"
                   value="permanent_user"
-                  class="form-radio text-blue-600 h-5 w-5"
+                  class="text-blue-600 h-5 w-5"
                 />
                 <div class="ml-3">
-                  <span class="block text-gray-800 font-medium"
-                    >Vĩnh Viễn (1 Người)</span
+                  <span class="block font-medium text-sm"
+                    >Vĩnh Viễn (1 Device)</span
                   >
                   <span class="block text-gray-500 text-xs"
-                    >Gắn chặt với thiết bị của người đầu tiên.</span
+                    >Gắn chặt với 1 thiết bị duy nhất.</span
                   >
                 </div>
               </label>
             </div>
           </div>
 
-          <!-- Phần Mô tả Key (Mới) -->
           <div class="mb-4">
-            <label for="key-note" class="block text-gray-700 font-bold mb-2"
-              >Ghi chú (Tùy chọn):</label
+            <label class="block text-gray-700 font-bold mb-1 text-sm"
+              >Ghi chú (Note)</label
             >
             <input
               type="text"
               id="key-note"
-              class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="VD: Gửi cho bạn Nam, Lớp 12A..."
+              class="w-full px-3 py-2 border rounded-lg text-sm"
+              placeholder="VD: Gửi cho bạn A..."
             />
           </div>
 
-          <div id="key-limit-group" class="mb-5 hidden animate-fade-in">
-            <label
-              for="key-limit-input"
-              class="block text-gray-700 font-bold mb-2"
-              >Nhập số người tối đa:</label
+          <div id="key-limit-group" class="mb-5 hidden">
+            <label class="block text-gray-700 font-bold mb-1 text-sm"
+              >Số người tối đa</label
             >
             <input
               type="number"
               id="key-limit-input"
               value="5"
               min="1"
-              class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <button
-            type="submit"
-            class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out shadow-lg"
-          >
-            Xác Nhận & Tạo Key
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- Modal: Chỉnh Sửa Link -->
-    <div
-      id="edit-link-modal"
-      class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
-    >
-      <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xl font-bold text-gray-800">Sửa Link Gốc</h3>
-          <button
-            onclick="closeModal('edit-link-modal')"
-            class="text-gray-400 hover:text-gray-600"
-          >
-            <ion-icon name="close-outline" class="text-3xl"></ion-icon>
-          </button>
-        </div>
-        <form id="edit-link-form">
-          <input type="hidden" id="edit-link-id" />
-          <div class="mb-4">
-            <label
-              for="edit-link-name"
-              class="block text-gray-700 font-bold mb-2"
-              >Tên mô tả</label
-            >
-            <input
-              type="text"
-              id="edit-link-name"
-              class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div class="mb-4">
-            <label
-              for="edit-target-url"
-              class="block text-gray-700 font-bold mb-2"
-              >Link Gốc</label
-            >
-            <input
-              type="url"
-              id="edit-target-url"
-              class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="https://azota.vn/..."
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300"
-          >
-            Lưu Thay Đổi
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- Modal: Chỉnh Sửa Key -->
-    <div
-      id="edit-key-modal"
-      class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
-    >
-      <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xl font-bold text-gray-800">Quản Lý Key</h3>
-          <button
-            onclick="closeModal('edit-key-modal')"
-            class="text-gray-400 hover:text-gray-600"
-          >
-            <ion-icon name="close-outline" class="text-3xl"></ion-icon>
-          </button>
-        </div>
-        <form id="edit-key-form">
-          <input type="hidden" id="edit-key-id" />
-
-          <div class="mb-4 bg-gray-50 p-3 rounded border">
-            <div class="flex justify-between">
-              <span class="text-gray-500 text-xs">ID Key:</span>
-              <code
-                id="edit-key-id-display"
-                class="font-mono font-bold text-blue-600"
-              ></code>
-            </div>
-            <div class="mt-1">
-              <span class="text-gray-500 text-xs block">Link Gốc:</span>
-              <strong
-                id="edit-key-link-name"
-                class="text-gray-800 break-words"
-              ></strong>
-            </div>
-          </div>
-
-          <div class="mb-4">
-            <label
-              for="edit-key-note"
-              class="block text-gray-700 font-bold mb-2"
-              >Ghi chú:</label
-            >
-            <input
-              type="text"
-              id="edit-key-note"
-              class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div id="edit-key-limit-group" class="mb-4 hidden">
-            <label
-              for="edit-key-limit-input"
-              class="block text-gray-700 font-bold mb-2"
-              >Số người tối đa (chỉ áp dụng cho key "Giới Hạn"):</label
-            >
-            <input
-              type="number"
-              id="edit-key-limit-input"
-              min="1"
-              class="w-full px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border rounded-lg text-sm"
             />
           </div>
 
           <button
             type="submit"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mb-3"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all"
           >
-            Lưu Cấu Hình
+            Tạo Key Ngay
           </button>
-
-          <div class="border-t pt-3 mt-3">
-            <h4 class="text-sm font-bold text-gray-700 mb-2">Vùng Nguy Hiểm</h4>
-            <button
-              type="button"
-              id="reset-key-btn"
-              class="w-full bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border border-yellow-300 font-bold py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center"
-            >
-              <ion-icon name="refresh-circle" class="mr-2 text-xl"></ion-icon>
-              Reset Key (Xóa người dùng cũ)
-            </button>
-            <p class="text-xs text-gray-500 mt-2 italic">
-              * Reset sẽ cho phép key được sử dụng lại từ đầu như mới.
-            </p>
-          </div>
         </form>
       </div>
     </div>
 
-    <!-- Modal: Thống Kê Key Chi Tiết -->
+    <!-- Modal: Key Stats Detail -->
     <div
       id="key-stats-modal"
-      class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
     >
       <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl">
         <div class="flex justify-between items-center mb-6">
@@ -795,14 +716,16 @@
             onclick="closeModal('key-stats-modal')"
             class="text-gray-400 hover:text-gray-600"
           >
-            <ion-icon name="close-outline" class="text-3xl"></ion-icon>
+            <ion-icon name="close" class="text-3xl"></ion-icon>
           </button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div class="bg-gray-50 p-3 rounded-lg border">
             <p class="text-xs text-gray-500 uppercase">Key ID</p>
-            <code id="stats-key-id" class="text-lg font-bold text-blue-600"
+            <code
+              id="stats-key-id"
+              class="text-lg font-bold text-blue-600 select-all"
               >...</code
             >
           </div>
@@ -813,45 +736,43 @@
         </div>
 
         <div class="space-y-3 mb-6">
-          <p>
-            <strong>Link Gốc:</strong>
+          <p class="text-sm">
+            Link Gốc:
             <span id="stats-key-link-name" class="font-semibold text-gray-800"
               >...</span
             >
           </p>
-          <!-- Hiển thị Note -->
-          <p
+          <div
             id="stats-key-note-container"
             class="hidden bg-yellow-50 p-2 rounded border border-yellow-200 text-sm text-gray-700 italic"
           >
-            <ion-icon
-              name="pencil-outline"
-              class="align-middle mr-1"
-            ></ion-icon>
-            <span id="stats-key-note"></span>
-          </p>
-
-          <div class="flex gap-4 text-sm text-gray-600">
-            <p>Created: <span id="stats-key-created-at">...</span></p>
+            <ion-icon name="pencil-outline" class="align-middle mr-1"></ion-icon
+            ><span id="stats-key-note"></span>
+          </div>
+          <div class="flex flex-wrap gap-4 text-sm text-gray-600">
             <p>
-              Type: <span id="stats-key-mode" class="font-medium">...</span>
+              Tạo lúc:
+              <span id="stats-key-created-at" class="font-medium">...</span>
+            </p>
+            <p>
+              Loại: <span id="stats-key-mode" class="font-medium">...</span>
             </p>
           </div>
-          <div class="flex gap-4 text-sm">
+          <div class="flex flex-wrap gap-3 text-sm">
             <p class="bg-blue-100 text-blue-800 px-2 py-1 rounded">
               Clicks:
               <span id="stats-key-total-clicks" class="font-bold">...</span>
             </p>
             <p class="bg-green-100 text-green-800 px-2 py-1 rounded">
-              User Count:
+              Users:
               <span id="stats-key-user-count" class="font-bold">...</span>
             </p>
             <span
               id="stats-key-limit-details"
               class="hidden bg-red-100 text-red-800 px-2 py-1 rounded"
+              >Limit:
+              <span id="stats-key-max-uses" class="font-bold">...</span></span
             >
-              Limit: <span id="stats-key-max-uses" class="font-bold">...</span>
-            </span>
           </div>
         </div>
 
@@ -861,9 +782,9 @@
             class="bg-gray-100 px-4 py-2 border-b flex justify-between items-center"
           >
             <h4 class="font-bold text-gray-700 text-sm">
-              Lịch sử truy cập (Users)
+              Lịch sử User truy cập
             </h4>
-            <span class="text-xs text-gray-500">Người dùng gần nhất</span>
+            <span class="text-xs text-gray-500">Mới nhất</span>
           </div>
           <div
             id="stats-key-user-list"
@@ -877,35 +798,272 @@
       </div>
     </div>
 
-    <!-- Modal: Xác Nhận Xóa -->
+    <!-- Modal: User History Detail (NEW) -->
+    <div
+      id="user-history-modal"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-4xl h-[80vh] flex flex-col"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h3 class="text-xl font-bold text-gray-800 flex items-center">
+              <ion-icon name="person" class="mr-2 text-indigo-600"></ion-icon
+              >Lịch Sử User
+            </h3>
+            <p class="text-sm text-gray-500 mt-1">
+              ID:
+              <code
+                id="user-history-id"
+                class="font-mono bg-gray-100 px-2 py-0.5 rounded text-blue-600 select-all"
+                >...</code
+              >
+            </p>
+          </div>
+          <button
+            onclick="closeModal('user-history-modal')"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <ion-icon name="close" class="text-3xl"></ion-icon>
+          </button>
+        </div>
+
+        <div class="flex-grow overflow-auto custom-scrollbar border rounded-lg">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 text-gray-600 text-xs uppercase font-bold">
+              <tr>
+                <th class="p-3 border-b">Thời gian</th>
+                <th class="p-3 border-b">Link Gốc</th>
+                <th class="p-3 border-b">Key Sử Dụng</th>
+                <th class="p-3 border-b">Loại Key</th>
+              </tr>
+            </thead>
+            <tbody
+              id="user-history-tbody"
+              class="text-sm text-gray-700 divide-y divide-gray-100"
+            >
+              <!-- Data -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Link Stats Detail (NEW) -->
+    <div
+      id="link-stats-modal"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-4xl h-[80vh] flex flex-col"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h3 class="text-xl font-bold text-gray-800 flex items-center">
+              <ion-icon name="stats-chart" class="mr-2 text-blue-600"></ion-icon
+              >Thống Kê Link
+            </h3>
+            <p
+              id="link-stats-name"
+              class="text-sm text-gray-600 mt-1 font-semibold"
+            >
+              ...
+            </p>
+          </div>
+          <button
+            onclick="closeModal('link-stats-modal')"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <ion-icon name="close" class="text-3xl"></ion-icon>
+          </button>
+        </div>
+
+        <div class="flex gap-4 mb-4">
+          <div class="bg-blue-50 p-3 rounded-lg flex-1">
+            <p class="text-xs text-blue-500 uppercase font-bold">
+              Tổng lượt truy cập
+            </p>
+            <p id="link-stats-total" class="text-2xl font-bold text-blue-800">
+              0
+            </p>
+          </div>
+          <div class="bg-green-50 p-3 rounded-lg flex-1">
+            <p class="text-xs text-green-500 uppercase font-bold">
+              Số Key liên quan
+            </p>
+            <p id="link-stats-keys" class="text-2xl font-bold text-green-800">
+              0
+            </p>
+          </div>
+        </div>
+
+        <div class="flex-grow overflow-auto custom-scrollbar border rounded-lg">
+          <table class="w-full text-left border-collapse">
+            <thead
+              class="bg-gray-50 text-gray-600 text-xs uppercase font-bold table-sticky-header"
+            >
+              <tr>
+                <th class="p-3 border-b">Thời gian</th>
+                <th class="p-3 border-b">User ID</th>
+                <th class="p-3 border-b">Key Sử Dụng</th>
+                <th class="p-3 border-b">Loại Key</th>
+              </tr>
+            </thead>
+            <tbody
+              id="link-stats-tbody"
+              class="text-sm text-gray-700 divide-y divide-gray-100"
+            >
+              <!-- Data -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Edit Link -->
+    <div
+      id="edit-link-modal"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+    >
+      <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">Sửa Link</h3>
+        <form id="edit-link-form">
+          <input type="hidden" id="edit-link-id" />
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-1"
+              >Tên mô tả</label
+            >
+            <input
+              type="text"
+              id="edit-link-name"
+              class="w-full border p-2 rounded"
+              required
+            />
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-1"
+              >Link Gốc</label
+            >
+            <input
+              type="url"
+              id="edit-target-url"
+              class="w-full border p-2 rounded"
+              required
+            />
+          </div>
+          <div class="flex gap-2 justify-end">
+            <button
+              type="button"
+              onclick="closeModal('edit-link-modal')"
+              class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700"
+            >
+              Lưu
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Edit Key -->
+    <div
+      id="edit-key-modal"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+    >
+      <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-gray-800">Sửa Key</h3>
+          <button onclick="closeModal('edit-key-modal')" class="text-gray-400">
+            <ion-icon name="close" class="text-2xl"></ion-icon>
+          </button>
+        </div>
+        <form id="edit-key-form">
+          <input type="hidden" id="edit-key-id" />
+          <div class="bg-gray-50 p-3 rounded mb-4 text-sm">
+            <p>
+              ID:
+              <span
+                id="edit-key-id-display"
+                class="font-mono font-bold text-blue-600"
+              ></span>
+            </p>
+            <p class="truncate mt-1">
+              Link: <span id="edit-key-link-name" class="font-semibold"></span>
+            </p>
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-1"
+              >Ghi chú</label
+            >
+            <input
+              type="text"
+              id="edit-key-note"
+              class="w-full border p-2 rounded"
+            />
+          </div>
+          <div id="edit-key-limit-group" class="mb-4 hidden">
+            <label class="block text-gray-700 text-sm font-bold mb-1"
+              >Tăng giới hạn người dùng</label
+            >
+            <input
+              type="number"
+              id="edit-key-limit-input"
+              min="1"
+              class="w-full border p-2 rounded"
+            />
+          </div>
+          <button
+            type="submit"
+            class="w-full bg-blue-600 text-white font-bold py-2 rounded mb-3"
+          >
+            Lưu Thay Đổi
+          </button>
+
+          <div class="border-t pt-3">
+            <button
+              type="button"
+              id="reset-key-btn"
+              class="w-full bg-yellow-100 text-yellow-800 py-2 rounded font-bold hover:bg-yellow-200 border border-yellow-300 flex justify-center items-center"
+            >
+              <ion-icon name="refresh" class="mr-2"></ion-icon> Reset Key (Xóa
+              lịch sử dùng)
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Confirm Delete -->
     <div
       id="confirm-modal"
-      class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
     >
       <div
         class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center"
       >
-        <div class="mb-4">
-          <div
-            class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4"
-          >
-            <ion-icon name="warning" class="text-red-600 text-2xl"></ion-icon>
-          </div>
-          <h3 class="text-xl font-bold text-gray-900">Xác nhận xóa?</h3>
+        <div
+          class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4"
+        >
+          <ion-icon name="warning" class="text-red-600 text-2xl"></ion-icon>
         </div>
-        <p id="confirm-message" class="text-gray-500 mb-6 text-sm">
-          Hành động này không thể hoàn tác. Dữ liệu sẽ mất vĩnh viễn.
-        </p>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">Xác nhận xóa?</h3>
+        <p id="confirm-message" class="text-sm text-gray-500 mb-6"></p>
         <div class="flex justify-center space-x-3">
           <button
             onclick="closeModal('confirm-modal')"
-            class="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 border border-gray-300 rounded shadow-sm"
+            class="bg-white text-gray-700 border border-gray-300 font-bold py-2 px-4 rounded hover:bg-gray-50"
           >
-            Hủy Bỏ
+            Hủy
           </button>
           <button
             id="confirm-delete-btn"
-            class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded shadow-sm"
+            class="bg-red-600 text-white font-bold py-2 px-4 rounded hover:bg-red-700 shadow"
           >
             Xóa Ngay
           </button>
@@ -913,9 +1071,8 @@
       </div>
     </div>
 
-    <!-- ==== SCRIPT ==== -->
+    <!-- ==== SCRIPTS ==== -->
     <script type="module">
-      // Import các hàm Firebase cần thiết
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
       import {
         getAuth,
@@ -935,847 +1092,97 @@
         serverTimestamp as rtdbServerTimestamp,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
-      // ---- BIẾN TOÀN CỤC ----
+      // Global Vars
       let db, auth, userId, appId;
       let linksPath, keysPath;
-      let allLinksData = {}; // Cache data
-      let allKeysData = {}; // Cache data
+      let allLinksData = {},
+        allKeysData = {};
 
-      // ---- CÁC BIẾN TRUY CẬP DOM (ELEMENTS) ----
-      const loadingView = document.getElementById("loading-view");
-      const adminView = document.getElementById("admin-view");
-      const redeemView = document.getElementById("redeem-view");
-      const redeemMessage = document.getElementById("redeem-message");
-      const redeemTitle = document.getElementById("redeem-title");
-      const redeemLoader = document.getElementById("redeem-loader");
-      const statusContainer = document.getElementById("status-container"); // Container mới cho status
-      const addLinkForm = document.getElementById("add-link-form");
-      const linkNameInput = document.getElementById("link-name");
-      const targetUrlInput = document.getElementById("target-url");
-      const linksList = document.getElementById("links-list");
-      const keysList = document.getElementById("keys-list");
-      const userIdDisplay = document.getElementById("user-id-display");
-      const searchKeyInput = document.getElementById("search-key-input"); // Input tìm kiếm
-
-      // Views & Tabs
-      const adminContentView = document.getElementById("admin-content");
-      const statsView = document.getElementById("stats-view");
-      const adminTab = document.getElementById("admin-tab");
-      const statsTab = document.getElementById("stats-tab");
-
-      // Modals
-      const generatedKeyModal = document.getElementById("generated-key-modal");
-      const generatedKeyLinkInput =
-        document.getElementById("generated-key-link");
-      const copySuccessText = document.getElementById("copy-success");
-
-      const configModal = document.getElementById("generate-key-config-modal");
-      const configForm = document.getElementById("generate-key-form");
-      const configLinkName = document.getElementById("config-link-name");
-      const configLinkIdInput = document.getElementById("config-link-id");
-      const keyLimitGroup = document.getElementById("key-limit-group");
-      const keyLimitInput = document.getElementById("key-limit-input");
-      const keyNoteInput = document.getElementById("key-note"); // Input Note
-
-      const editLinkModal = document.getElementById("edit-link-modal");
-      const editLinkForm = document.getElementById("edit-link-form");
-      const editLinkIdInput = document.getElementById("edit-link-id");
-      const editLinkNameInput = document.getElementById("edit-link-name");
-      const editTargetUrlInput = document.getElementById("edit-target-url");
-
-      const editKeyModal = document.getElementById("edit-key-modal");
-      const editKeyForm = document.getElementById("edit-key-form");
-      const editKeyIdInput = document.getElementById("edit-key-id");
-      const editKeyIdDisplay = document.getElementById("edit-key-id-display");
-      const editKeyLinkName = document.getElementById("edit-key-link-name");
-      const editKeyNoteInput = document.getElementById("edit-key-note"); // Edit Note
-      const editKeyLimitGroup = document.getElementById("edit-key-limit-group");
-      const editKeyLimitInput = document.getElementById("edit-key-limit-input");
-      const resetKeyBtn = document.getElementById("reset-key-btn");
-
-      const keyStatsModal = document.getElementById("key-stats-modal");
-      const statsKeyId = document.getElementById("stats-key-id");
-      const statsKeyLinkName = document.getElementById("stats-key-link-name");
-      const statsKeyNoteContainer = document.getElementById(
-        "stats-key-note-container"
-      );
-      const statsKeyNote = document.getElementById("stats-key-note");
-      const statsKeyCreatedAt = document.getElementById("stats-key-created-at");
-      const statsKeyMode = document.getElementById("stats-key-mode");
-      const statsKeyStatus = document.getElementById("stats-key-status");
-      const statsKeyTotalClicks = document.getElementById(
-        "stats-key-total-clicks"
-      );
-      const statsKeyUserCount = document.getElementById("stats-key-user-count");
-      const statsKeyLimitDetails = document.getElementById(
-        "stats-key-limit-details"
-      );
-      const statsKeyMaxUses = document.getElementById("stats-key-max-uses");
-      const statsKeyUserList = document.getElementById("stats-key-user-list");
-
-      const confirmModal = document.getElementById("confirm-modal");
-      const confirmMessage = document.getElementById("confirm-message");
-      const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
-
-      const statsTotalLinks = document.getElementById("stats-total-links");
-      const statsTotalKeys = document.getElementById("stats-total-keys");
-      const statsTotalClicks = document.getElementById("stats-total-clicks");
-      const statsTopLinks = document.getElementById("stats-top-links");
-      const statsTopKeys = document.getElementById("stats-top-keys");
-
-      // ---- HÀM TIỆN ÍCH ----
-
-      window.closeModal = (modalId) => {
-        document.getElementById(modalId).style.display = "none";
+      // DOM Elements
+      const views = {
+        loading: document.getElementById("loading-view"),
+        admin: document.getElementById("admin-view"),
+        redeem: document.getElementById("redeem-view"),
+        adminContent: document.getElementById("admin-content"),
+        stats: document.getElementById("stats-view"),
+        logs: document.getElementById("logs-view"),
       };
 
-      function formatTimestamp(ts) {
-        if (!ts) return "Không rõ";
-        try {
-          return new Date(ts).toLocaleString("vi-VN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-        } catch (e) {
-          return "Ngày không hợp lệ";
-        }
-      }
-
-      window.copyKeyLink = () => {
-        generatedKeyLinkInput.select();
-        try {
-          document.execCommand("copy");
-          copySuccessText.style.display = "flex";
-          setTimeout(() => {
-            copySuccessText.style.display = "none";
-          }, 2000);
-        } catch (err) {
-          console.error("Không thể sao chép: ", err);
-          alert("Lỗi khi sao chép link.");
-        }
+      const tabs = {
+        admin: document.getElementById("admin-tab"),
+        stats: document.getElementById("stats-tab"),
+        logs: document.getElementById("logs-tab"),
       };
 
-      // Hàm copy ĐÃ LOẠI BỎ Worker và FIX lỗi URL
-      window.copyKeyFromHistory = (key, element) => {
-        // Lấy URL gốc an toàn hơn
-        const baseUrl = window.location.href.split("#")[0];
-        const redeemLink = `${baseUrl}#redeem?key=${key}`;
-
-        const input = document.createElement("textarea");
-        input.value = redeemLink;
-        document.body.appendChild(input);
-        input.select();
-        try {
-          document.execCommand("copy");
-          const originalHTML = element.innerHTML;
-          // Hiệu ứng copy
-          element.innerHTML = `<ion-icon name="checkmark-outline" class="mr-1"></ion-icon> Copied!`;
-          element.classList.remove("text-blue-700");
-          element.classList.add("text-green-600");
-
-          setTimeout(() => {
-            element.innerHTML = originalHTML;
-            element.classList.remove("text-green-600");
-            element.classList.add("text-blue-700");
-          }, 1500);
-        } catch (err) {
-          console.error("Copy failed", err);
-        }
-        document.body.removeChild(input);
+      // Redeem Elements
+      const redeemEl = {
+        title: document.getElementById("redeem-title"),
+        msg: document.getElementById("redeem-message"),
+        loader: document.getElementById("redeem-loader"),
+        container: document.getElementById("status-container"),
+        userId: document.getElementById("redeem-user-id"),
       };
 
-      window.showView = (viewId) => {
-        if (viewId === "admin-content") {
-          adminContentView.style.display = "block";
-          statsView.style.display = "none";
-          adminTab.classList.add("tab-active");
-          adminTab.classList.remove("tab-inactive");
-          statsTab.classList.add("tab-inactive");
-          statsTab.classList.remove("tab-active");
-        } else {
-          adminContentView.style.display = "none";
-          statsView.style.display = "block";
-          adminTab.classList.remove("tab-active");
-          adminTab.classList.add("tab-inactive");
-          statsTab.classList.remove("tab-inactive");
-          statsTab.classList.add("tab-active");
+      // Helper: Toggle View
+      window.showView = (viewName) => {
+        views.adminContent.style.display = "none";
+        views.stats.style.display = "none";
+        views.logs.style.display = "none";
+
+        Object.values(tabs).forEach((t) => {
+          t.classList.remove("tab-active");
+          t.classList.add("tab-inactive");
+        });
+
+        if (viewName === "admin-content") {
+          views.adminContent.style.display = "block";
+          tabs.admin.classList.add("tab-active");
+          tabs.admin.classList.remove("tab-inactive");
+        } else if (viewName === "stats-view") {
+          views.stats.style.display = "block";
+          tabs.stats.classList.add("tab-active");
+          tabs.stats.classList.remove("tab-inactive");
           updateStatsView();
+        } else if (viewName === "logs-view") {
+          views.logs.style.display = "block";
+          tabs.logs.classList.add("tab-active");
+          tabs.logs.classList.remove("tab-inactive");
+          renderLogsTable();
         }
       };
 
-      // ---- KHỞI TẠO FIREBASE ----
-      async function initializeFirebase() {
-        const firebaseConfigStr =
-          typeof __firebase_config !== "undefined" ? __firebase_config : "{}";
-        let firebaseConfig;
-
-        try {
-          firebaseConfig = JSON.parse(firebaseConfigStr);
-          // Fallback config if needed (should rely on injected config)
-          if (!firebaseConfig.apiKey) {
-            console.warn("Using fallback config");
-            firebaseConfig = {
-              apiKey: "AIzaSyDnSzYda3CUXNtWrW8ytW2Wnx3mFunC9Ig",
-              authDomain: "uniquekey-a0912.firebaseapp.com",
-              databaseURL:
-                "https://uniquekey-a0912-default-rtdb.firebaseio.com",
-              projectId: "uniquekey-a0912",
-              storageBucket: "uniquekey-a0912.firebasestorage.app",
-              messagingSenderId: "440795775727",
-              appId: "1:440795775727:web:1c59c88d5039f47a88d11a",
-            };
-          }
-        } catch (e) {
-          console.error("Config Error", e);
-          return;
-        }
-
-        appId =
-          typeof __app_id !== "undefined"
-            ? __app_id
-            : "default-app-id-uniquekey";
-
-        try {
-          const app = initializeApp(firebaseConfig);
-          db = getDatabase(app);
-          auth = getAuth(app);
-
-          onAuthStateChanged(auth, async (user) => {
-            if (user) {
-              // --- FIX BẮT ĐẦU: LOGIC GIỮ NGUYÊN ID NGƯỜI DÙNG ---
-              // Kiểm tra xem đã lưu ID trong trình duyệt chưa
-              const STORAGE_KEY = "dienkon_sticky_user_id";
-              let savedId = localStorage.getItem(STORAGE_KEY);
-
-              if (savedId) {
-                // Nếu đã có ID cũ, dùng lại nó (kể cả khi Firebase tạo UID mới)
-                userId = savedId;
-                console.log("Restored Sticky User ID:", userId);
-              } else {
-                // Nếu chưa có, dùng UID hiện tại của Firebase và lưu lại
-                userId = user.uid;
-                try {
-                  localStorage.setItem(STORAGE_KEY, userId);
-                } catch (e) {
-                  console.warn("Cannot save to localStorage:", e);
-                }
-                console.log("New User ID generated:", userId);
-              }
-              // --- FIX KẾT THÚC ---
-
-              // Hiển thị ID để debug
-              userIdDisplay.textContent = userId;
-              const redeemFooterId = document.getElementById("redeem-user-id");
-              if (redeemFooterId) redeemFooterId.textContent = `ID: ${userId}`;
-
-              linksPath = `artifacts/${appId}/public/data/links`;
-              keysPath = `artifacts/${appId}/public/data/keys`;
-
-              handleRouting();
-              window.onhashchange = handleRouting;
-            } else {
-              try {
-                if (
-                  typeof __initial_auth_token !== "undefined" &&
-                  __initial_auth_token
-                ) {
-                  await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                  await signInAnonymously(auth);
-                }
-              } catch (authError) {
-                console.error("Auth Error:", authError);
-                loadingView.innerText = "Lỗi xác thực.";
-              }
-            }
-          });
-        } catch (e) {
-          console.error("Init Error:", e);
-        }
-      }
-
-      function handleRouting() {
-        const hash = window.location.hash;
-        if (hash.startsWith("#redeem?key=")) {
-          loadingView.style.display = "none";
-          adminView.style.display = "none";
-          redeemView.style.display = "flex";
-          handleRedeemKey(hash.split("key=")[1]);
-        } else {
-          document.title = "Hệ Thống Quản Lý Key";
-          loadingView.style.display = "none";
-          adminView.style.display = "block";
-          redeemView.style.display = "none";
-          window.showView("admin-content");
-          loadAdminData();
-        }
-      }
-
-      function loadAdminData() {
-        if (!db) return;
-        const linksRef = ref(db, linksPath);
-        onValue(linksRef, (snapshot) => {
-          if (!snapshot.exists()) {
-            linksList.innerHTML =
-              '<p class="text-gray-500 text-center">Chưa có link nào.</p>';
-            allLinksData = {};
-            // FIX RACE CONDITION: Render key lại ngay khi có dữ liệu link
-            renderKeys();
-            return;
-          }
-          allLinksData = snapshot.val();
-          let links = Object.entries(allLinksData).map(([id, value]) => ({
-            id,
-            ...value,
-          }));
-          links.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-          linksList.innerHTML = "";
-          links.forEach((link) => {
-            const el = document.createElement("div");
-            el.className =
-              "bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow";
-            const safeUrl = CSS.escape(link.targetUrl);
-            const safeName = CSS.escape(link.name);
-
-            el.innerHTML = `
-                <div class="flex items-start justify-between">
-                    <div>
-                        <h4 class="font-bold text-lg text-blue-700 mb-1 flex items-center">
-                            <ion-icon name="document-text-outline" class="mr-2"></ion-icon>
-                            ${link.name}
-                        </h4>
-                        <p class="text-xs text-gray-500 break-all mb-3 bg-white p-1 rounded border inline-block max-w-xs truncate">${link.targetUrl}</p>
-                    </div>
-                </div>
-                <div class="flex flex-wrap gap-2 mt-2">
-                    <button 
-                        onclick="window.openConfigModal('${link.id}', '${safeName}')"
-                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-3 rounded text-sm flex items-center">
-                        <ion-icon name="key" class="mr-1"></ion-icon> Tạo Key
-                    </button>
-                    <button 
-                        onclick="window.openEditLinkModal('${link.id}', '${safeName}', '${safeUrl}')"
-                        class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1.5 px-3 rounded text-sm flex items-center">
-                        <ion-icon name="create" class="mr-1"></ion-icon> Sửa
-                    </button>
-                    <button 
-                        onclick="window.openConfirmDelete('${link.id}', 'link')"
-                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-1.5 px-3 rounded text-sm flex items-center">
-                        <ion-icon name="trash" class="mr-1"></ion-icon> Xóa
-                    </button>
-                </div>
-              `;
-            linksList.appendChild(el);
-          });
-          // FIX RACE CONDITION: Render key lại sau khi có dữ liệu link
-          renderKeys();
-        });
-
-        const keysRef = ref(db, keysPath);
-        onValue(keysRef, (snapshot) => {
-          allKeysData = snapshot.exists() ? snapshot.val() : {};
-          renderKeys(); // Render keys tách ra hàm riêng để dùng cho Search
-        });
-
-        // Xử lý Search
-        searchKeyInput.addEventListener("input", (e) => {
-          renderKeys(e.target.value);
-        });
-
-        addLinkForm.onsubmit = handleAddLink;
-        configForm.onsubmit = handleGenerateKeyConfirm;
-        editLinkForm.onsubmit = handleEditLink;
-        editKeyForm.onsubmit = handleEditKey;
-        resetKeyBtn.onclick = () => {
-          handleResetKey(editKeyIdInput.value);
-        };
-        confirmDeleteBtn.onclick = handleConfirmDelete;
-
-        document.querySelectorAll('input[name="keyMode"]').forEach((radio) => {
-          radio.onchange = (e) => {
-            if (e.target.value === "limited_users") {
-              keyLimitGroup.style.display = "block";
-              keyLimitGroup.classList.add("animate-fade-in");
-            } else {
-              keyLimitGroup.style.display = "none";
-            }
-          };
+      // Helper: Format Date
+      function formatTimestamp(ts) {
+        if (!ts) return "-";
+        return new Date(ts).toLocaleString("vi-VN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
         });
       }
 
-      // Hàm Render Keys (Hỗ trợ Search)
-      function renderKeys(searchTerm = "") {
-        if (Object.keys(allKeysData).length === 0) {
-          keysList.innerHTML =
-            '<p class="text-gray-500 text-center">Chưa tạo key nào.</p>';
-          return;
-        }
+      // Helper: Close Modal
+      window.closeModal = (id) =>
+        (document.getElementById(id).style.display = "none");
 
-        let keys = Object.entries(allKeysData).map(([id, value]) => ({
-          id,
-          ...value,
-        }));
-        keys.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-        // Logic Search thông minh
-        if (searchTerm) {
-          const cleanTerm = searchTerm.trim();
-          // Check nếu người dùng paste link
-          const urlMatch = cleanTerm.match(/key=([A-Z0-9]+)/i);
-          const keyword = urlMatch
-            ? urlMatch[1].toUpperCase()
-            : cleanTerm.toUpperCase();
-
-          keys = keys.filter(
-            (k) =>
-              k.id.includes(keyword) ||
-              (k.note && k.note.toUpperCase().includes(keyword))
-          );
-        }
-
-        keysList.innerHTML = "";
-        if (keys.length === 0) {
-          keysList.innerHTML =
-            '<p class="text-gray-500 text-center py-4">Không tìm thấy key phù hợp.</p>';
-          return;
-        }
-
-        keys.forEach((key) => {
-          const el = document.createElement("div");
-          el.className =
-            "bg-white p-3 rounded-lg border shadow-sm hover:bg-gray-50 transition-colors";
-          const { statusText, statusClass } = getKeyStatus(key);
-          // Sửa lỗi undefined: Dùng optional chaining và fallback
-          const linkName =
-            (allLinksData[key.linkId] && allLinksData[key.linkId].name) ||
-            key.linkName ||
-            "Link đã xóa";
-
-          // Hiển thị Note nếu có
-          const noteHtml = key.note
-            ? `<p class="text-xs text-gray-500 italic mt-1"><ion-icon name="pencil-outline" class="mr-1 align-middle"></ion-icon>${key.note}</p>`
-            : "";
-
-          el.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p 
-                          class="font-mono text-sm font-bold text-blue-700 cursor-pointer hover:text-blue-500 flex items-center"
-                          onclick="window.copyKeyFromHistory('${key.id}', this)"
-                          title="Click để copy"
-                        >
-                          <ion-icon name="copy-outline" class="mr-1"></ion-icon> ${
-                            key.id
-                          }
-                        </p>
-                        <p class="text-xs text-gray-600 mt-1">Link: <strong>${linkName}</strong></p>
-                        ${noteHtml}
-                    </div>
-                    <div class="text-right">
-                        <span class="text-xs px-2 py-1 rounded-full ${
-                          statusClass.includes("green")
-                            ? "bg-green-100 text-green-700"
-                            : statusClass.includes("red")
-                            ? "bg-red-100 text-red-700"
-                            : "bg-gray-100 text-gray-700"
-                        }">
-                            ${statusText}
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="mt-3 flex justify-between items-center border-t pt-2">
-                     <p class="text-xs text-gray-400 cursor-pointer hover:text-blue-500" onclick="window.openKeyStatsModal('${
-                       key.id
-                     }')">
-                        <ion-icon name="eye" class="align-middle"></ion-icon> Chi tiết
-                     </p>
-                     <div class="flex gap-2">
-                        <button onclick="window.openEditKeyModal('${
-                          key.id
-                        }')" class="text-yellow-600 hover:text-yellow-800 text-xs font-bold">
-                            Sửa
-                        </button>
-                        <button onclick="window.openConfirmDelete('${
-                          key.id
-                        }', 'key')" class="text-red-600 hover:text-red-800 text-xs font-bold">
-                            Xóa
-                        </button>
-                    </div>
-                </div>
-              `;
-          keysList.appendChild(el);
-        });
-      }
-
-      // CRUD LINK
-      async function handleAddLink(e) {
-        e.preventDefault();
-        const name = linkNameInput.value.trim();
-        const targetUrl = targetUrlInput.value.trim();
-        if (!name || !targetUrl) return;
-        try {
-          const newLinkRef = push(ref(db, linksPath));
-          await set(newLinkRef, {
-            name,
-            targetUrl,
-            createdAt: rtdbServerTimestamp(),
-          });
-          linkNameInput.value = "";
-          targetUrlInput.value = "";
-        } catch (error) {
-          console.error(error);
-        }
-      }
-
-      window.openEditLinkModal = (linkId, safeName, safeUrl) => {
-        editLinkIdInput.value = linkId;
-        editLinkNameInput.value = safeName.replace(/\\/g, "");
-        editTargetUrlInput.value = safeUrl.replace(/\\/g, "");
-        editLinkModal.style.display = "flex";
-      };
-
-      async function handleEditLink(e) {
-        e.preventDefault();
-        try {
-          await update(ref(db, `${linksPath}/${editLinkIdInput.value}`), {
-            name: editLinkNameInput.value.trim(),
-            targetUrl: editTargetUrlInput.value.trim(),
-          });
-          closeModal("edit-link-modal");
-        } catch (error) {
-          console.error(error);
-        }
-      }
-
-      window.openConfirmDelete = (id, type) => {
-        if (type === "link")
-          confirmMessage.textContent =
-            "Xóa link này sẽ làm hỏng các key liên quan.";
-        else confirmMessage.textContent = "Xóa key này vĩnh viễn?";
-        confirmDeleteBtn.dataset.deleteId = id;
-        confirmDeleteBtn.dataset.deleteType = type;
-        confirmModal.style.display = "flex";
-      };
-
-      async function handleConfirmDelete() {
-        const id = confirmDeleteBtn.dataset.deleteId;
-        const type = confirmDeleteBtn.dataset.deleteType;
-        const path = type === "link" ? linksPath : keysPath;
-        try {
-          await remove(ref(db, `${path}/${id}`));
-          closeModal("confirm-modal");
-        } catch (error) {
-          console.error(error);
-        }
-      }
-
-      // CRUD KEY
-      window.openConfigModal = (linkId, safeName) => {
-        const linkName = safeName.replace(/\\/g, "");
-        configLinkName.textContent = linkName;
-        configLinkIdInput.value = linkId;
-        configForm.reset();
-        keyLimitGroup.style.display = "none";
-        configModal.style.display = "flex";
-      };
-
-      async function handleGenerateKeyConfirm(e) {
-        e.preventDefault();
-        const linkId = configLinkIdInput.value;
-        const linkName = configLinkName.textContent;
-        const formData = new FormData(configForm);
-        const mode = formData.get("keyMode");
-        const note = keyNoteInput.value.trim(); // Lấy note
-
-        let config = {
-          mode: mode,
-          linkId: linkId,
-          linkName: linkName,
-          status: "active",
-          createdAt: rtdbServerTimestamp(),
-          allowedUsers: null,
-          totalClicks: 0,
-          note: note, // Lưu note
-        };
-        if (mode === "limited_users")
-          config.maxUses = parseInt(keyLimitInput.value, 10) || 1;
-
-        try {
-          const randomKey = Math.random()
-            .toString(36)
-            .substring(2, 10)
-            .toUpperCase();
-          await set(ref(db, `${keysPath}/${randomKey}`), config);
-          closeModal("generate-key-config-modal");
-
-          // BỎ WORKER, CHỈ DÙNG LINK HASH
-          const baseUrl = window.location.href.split("#")[0];
-          generatedKeyLinkInput.value = `${baseUrl}#redeem?key=${randomKey}`;
-
-          generatedKeyModal.style.display = "flex";
-          copySuccessText.style.display = "none";
-        } catch (error) {
-          console.error(error);
-        }
-      }
-
+      // ---- KEY STATS DETAIL MODAL ----
       window.openKeyStatsModal = (keyId) => {
         const key = allKeysData[keyId];
         if (!key) return;
-        const { statusText } = getKeyStatus(key);
-        statsKeyId.textContent = keyId;
-        // Fix undefined link name
-        statsKeyLinkName.textContent =
-          (allLinksData[key.linkId] && allLinksData[key.linkId].name) ||
-          key.linkName ||
-          "Link đã xóa";
 
-        // Show note
-        if (key.note) {
-          statsKeyNoteContainer.style.display = "block";
-          statsKeyNote.textContent = key.note;
-        } else {
-          statsKeyNoteContainer.style.display = "none";
-        }
-
-        statsKeyCreatedAt.textContent = formatTimestamp(key.createdAt);
-        statsKeyTotalClicks.textContent = key.totalClicks || 0;
-        statsKeyUserCount.textContent = key.allowedUsers
-          ? Object.keys(key.allowedUsers).length
-          : 0;
-        statsKeyStatus.textContent = statusText;
-
-        let modeText = "1 Lần";
-        if (key.mode === "limited_users")
-          modeText = `Giới Hạn (${key.maxUses})`;
-        if (key.mode === "permanent_user") modeText = "Vĩnh Viễn";
-        statsKeyMode.textContent = modeText;
-
-        if (key.mode === "limited_users") {
-          statsKeyLimitDetails.style.display = "inline-block";
-          statsKeyMaxUses.textContent = key.maxUses;
-        } else {
-          statsKeyLimitDetails.style.display = "none";
-        }
-
-        statsKeyUserList.innerHTML = "";
-        if (key.allowedUsers) {
-          Object.entries(key.allowedUsers).forEach(([uid, ts]) => {
-            const p = document.createElement("div");
-            p.className =
-              "flex justify-between text-xs border-b pb-1 last:border-0";
-            p.innerHTML = `<span class="font-mono text-gray-600 truncate w-1/2">${uid}</span><span class="text-gray-400">${formatTimestamp(
-              ts
-            )}</span>`;
-            statsKeyUserList.appendChild(p);
-          });
-        } else {
-          statsKeyUserList.innerHTML =
-            '<p class="text-gray-500 text-sm text-center py-2">Chưa có ai.</p>';
-        }
-
-        keyStatsModal.style.display = "flex";
-      };
-
-      window.openEditKeyModal = (keyId) => {
-        const key = allKeysData[keyId];
-        editKeyIdInput.value = keyId;
-        editKeyIdDisplay.textContent = keyId;
-        editKeyLinkName.textContent =
-          (allLinksData[key.linkId] && allLinksData[key.linkId].name) ||
-          key.linkName ||
-          "Link đã xóa";
-
-        editKeyNoteInput.value = key.note || ""; // Set value note
-
-        if (key.mode === "limited_users") {
-          editKeyLimitGroup.style.display = "block";
-          editKeyLimitInput.value = key.maxUses || 1;
-        } else {
-          editKeyLimitGroup.style.display = "none";
-        }
-        editKeyModal.style.display = "flex";
-      };
-
-      async function handleEditKey(e) {
-        e.preventDefault();
-        const keyId = editKeyIdInput.value;
-        const keyData = allKeysData[keyId];
-        let updates = {};
-
-        // Update Note
-        updates.note = editKeyNoteInput.value.trim();
-
-        if (keyData.mode === "limited_users") {
-          updates.maxUses = parseInt(editKeyLimitInput.value, 10);
-          const currentUsers = keyData.allowedUsers
-            ? Object.keys(keyData.allowedUsers).length
-            : 0;
-          if (currentUsers < updates.maxUses && keyData.status === "full")
-            updates.status = "active";
-        }
-        if (Object.keys(updates).length)
-          await update(ref(db, `${keysPath}/${keyId}`), updates);
-        closeModal("edit-key-modal");
-      }
-
-      async function handleResetKey(keyId) {
-        await update(ref(db, `${keysPath}/${keyId}`), {
-          status: "active",
-          allowedUsers: null,
-          usedBy: null,
-          usedAt: null,
-          totalClicks: 0, // Reset clicks too if needed
-        });
-        closeModal("edit-key-modal");
-      }
-
-      // REDEEM LOGIC (SỬA LẠI LOGIC 1 LẦN DÙNG)
-      async function redirectToTarget(keyRef, keyData) {
-        redeemLoader.style.display = "none";
-        redeemMessage.innerHTML = `<span class="text-green-600 font-bold text-lg"><ion-icon name="checkmark-circle" class="align-middle"></ion-icon> Xác thực thành công!</span><br><span class="text-gray-500 text-xs">Đang chuyển đến tài liệu...</span>`;
-        statusContainer.classList.remove("bg-blue-50", "border-blue-100");
-        statusContainer.classList.add("bg-green-50", "border-green-100");
-
-        try {
-          await update(keyRef, { totalClicks: (keyData.totalClicks || 0) + 1 });
-
-          // Lấy link gốc
-          const linkSnapshot = await get(
-            ref(db, `${linksPath}/${keyData.linkId}`)
-          );
-          let targetUrl = "";
-
-          if (linkSnapshot.exists()) {
-            const linkVal = linkSnapshot.val();
-            targetUrl = linkVal.targetUrl;
-            if (linkVal.name) redeemTitle.textContent = linkVal.name;
-          } else {
-            redeemMessage.innerHTML = `<span class="text-red-500">Link gốc không còn tồn tại.</span>`;
-            return;
-          }
-
-          setTimeout(() => {
-            window.location.href = targetUrl;
-          }, 2000);
-        } catch (e) {
-          redeemMessage.textContent = "Lỗi hệ thống khi chuyển hướng.";
-        }
-      }
-
-      async function handleRedeemKey(key) {
-        if (!key || !userId) {
-          redeemMessage.textContent = "Lỗi xác thực người dùng.";
-          redeemLoader.style.display = "none";
-          return;
-        }
-
-        const keyRef = ref(db, `${keysPath}/${key}`);
-        try {
-          const keySnapshot = await get(keyRef);
-          if (!keySnapshot.exists()) {
-            redeemMessage.innerHTML = `<span class="text-red-500 font-bold">Key không tồn tại!</span>`;
-            redeemLoader.style.display = "none";
-            statusContainer.classList.add("bg-red-50", "border-red-100");
-            return;
-          }
-
-          const keyData = keySnapshot.val();
-
-          // UI Update
-          if (keyData.linkName) {
-            document.title = keyData.linkName;
-            redeemTitle.textContent = keyData.linkName;
-          }
-
-          // === LOGIC MỚI: ƯU TIÊN KIỂM TRA QUYỀN TRƯỚC ===
-          // Fix lỗi: Người dùng cũ bị chặn khi key đã full/claimed/used
-          const allowedUsers = keyData.allowedUsers || {};
-          const isCurrentUserAllowed =
-            allowedUsers[userId] || keyData.usedBy === userId;
-
-          if (isCurrentUserAllowed) {
-            // Người này đã dùng key này rồi -> Cho phép vào lại luôn
-            await redirectToTarget(keyRef, keyData);
-            return;
-          }
-
-          // Nếu chưa có quyền, mới kiểm tra trạng thái chặn người mới
-          if (["used", "full", "claimed", "expired"].includes(keyData.status)) {
-            redeemLoader.style.display = "none";
-            redeemMessage.innerHTML = `<span class="text-red-600 font-bold"><ion-icon name="alert-circle" class="align-middle"></ion-icon> Key đã hết lượt sử dụng.</span>`;
-            statusContainer.classList.add("bg-red-50", "border-red-100");
-            return;
-          }
-
-          const userCount = Object.keys(allowedUsers).length;
-
-          // Xử lý Logic người dùng MỚI
-          let mode = keyData.mode || "single_use";
-          let updates = {};
-
-          if (mode === "single_use") {
-            // 1 lần dùng: Chặn ngay lập tức sau khi người đầu tiên vào
-            updates = {
-              status: "used",
-              usedAt: rtdbServerTimestamp(),
-              usedBy: userId,
-              [`allowedUsers/${userId}`]: rtdbServerTimestamp(),
-            };
-            await update(keyRef, updates);
-            await redirectToTarget(keyRef, keyData);
-            return;
-          } else if (mode === "permanent_user") {
-            // Vĩnh viễn cho 1 người
-            if (userCount === 0) {
-              updates = {
-                status: "claimed",
-                [`allowedUsers/${userId}`]: rtdbServerTimestamp(),
-              };
-              await update(keyRef, updates);
-              await redirectToTarget(keyRef, keyData);
-            } else {
-              redeemMessage.textContent = "Key này đã có chủ sở hữu khác.";
-              redeemLoader.style.display = "none";
-            }
-          } else if (mode === "limited_users") {
-            // Giới hạn số lượng
-            if (userCount < keyData.maxUses) {
-              updates[`allowedUsers/${userId}`] = rtdbServerTimestamp();
-              if (userCount + 1 >= keyData.maxUses) updates.status = "full";
-              await update(keyRef, updates);
-              await redirectToTarget(keyRef, keyData);
-            } else {
-              redeemMessage.textContent = "Key đã đủ số lượng người dùng.";
-              redeemLoader.style.display = "none";
-            }
-          }
-        } catch (error) {
-          console.error(error);
-          redeemMessage.textContent = "Lỗi kết nối Server.";
-          redeemLoader.style.display = "none";
-        }
-      }
-
-      function getKeyStatus(key) {
+        // Tính toán trạng thái
         let statusText = "Active",
-          statusClass = "text-green-600";
-        if (
-          key.status === "used" ||
-          key.status === "full" ||
-          key.status === "expired"
-        ) {
+          statusColor = "text-green-600";
+        if (["used", "full", "expired"].includes(key.status)) {
           statusText = "Hết hạn";
-          statusClass = "text-red-600";
+          statusColor = "text-red-600";
         }
         if (key.status === "claimed") {
           statusText = "Đã nhận";
-          statusClass = "text-purple-600";
+          statusColor = "text-purple-600";
         }
 
         const count = key.allowedUsers
@@ -1784,112 +1191,634 @@
         if (key.mode === "limited_users")
           statusText += ` (${count}/${key.maxUses})`;
 
-        return { statusText, statusClass };
+        // Fill Data
+        document.getElementById("stats-key-id").textContent = keyId;
+        const statusEl = document.getElementById("stats-key-status");
+        statusEl.textContent = statusText;
+        statusEl.className = `font-bold ${statusColor}`;
+
+        document.getElementById("stats-key-link-name").textContent =
+          allLinksData[key.linkId]?.name || key.linkName || "Unknown";
+
+        // Note
+        const noteCont = document.getElementById("stats-key-note-container");
+        if (key.note) {
+          noteCont.style.display = "block";
+          document.getElementById("stats-key-note").textContent = key.note;
+        } else {
+          noteCont.style.display = "none";
+        }
+
+        document.getElementById("stats-key-created-at").textContent =
+          formatTimestamp(key.createdAt);
+        document.getElementById("stats-key-total-clicks").textContent =
+          key.totalClicks || 0;
+        document.getElementById("stats-key-user-count").textContent = count;
+
+        let modeText = "1 Lần";
+        if (key.mode === "limited_users")
+          modeText = `Giới Hạn (${key.maxUses})`;
+        if (key.mode === "permanent_user") modeText = "Vĩnh Viễn";
+        document.getElementById("stats-key-mode").textContent = modeText;
+
+        const limitEl = document.getElementById("stats-key-limit-details");
+        if (key.mode === "limited_users") {
+          limitEl.style.display = "inline-block";
+          document.getElementById("stats-key-max-uses").textContent =
+            key.maxUses;
+        } else {
+          limitEl.style.display = "none";
+        }
+
+        // Render User List
+        const list = document.getElementById("stats-key-user-list");
+        list.innerHTML = "";
+
+        const users = key.allowedUsers || {};
+        // Hỗ trợ backward compat cho data cũ chỉ có usedBy
+        if (key.usedBy && !users[key.usedBy])
+          users[key.usedBy] = key.usedAt || key.createdAt;
+
+        if (Object.keys(users).length === 0) {
+          list.innerHTML =
+            '<p class="text-gray-500 text-sm text-center py-4">Chưa có ai sử dụng key này.</p>';
+        } else {
+          // Sort newest first
+          const sortedUsers = Object.entries(users).sort((a, b) => b[1] - a[1]);
+          sortedUsers.forEach(([uid, ts]) => {
+            const d = document.createElement("div");
+            d.className =
+              "flex justify-between text-xs border-b pb-1 last:border-0 hover:bg-gray-50 p-1";
+            d.innerHTML = `<span class="font-mono text-blue-600 hover-underline select-all" onclick="window.openUserHistory('${uid}')">${uid}</span><span class="text-gray-500">${formatTimestamp(
+              ts
+            )}</span>`;
+            list.appendChild(d);
+          });
+        }
+
+        document.getElementById("key-stats-modal").style.display = "flex";
+      };
+
+      // ---- USER HISTORY MODAL (NEW FEATURE) ----
+      window.openUserHistory = (targetUid) => {
+        if (!targetUid) return;
+        document.getElementById("user-history-id").textContent = targetUid;
+
+        const tbody = document.getElementById("user-history-tbody");
+        tbody.innerHTML = "";
+
+        const allLogs = generateReportData();
+        const userLogs = allLogs.filter((log) => log.uid === targetUid);
+
+        if (userLogs.length === 0) {
+          tbody.innerHTML =
+            '<tr><td colspan="4" class="p-4 text-center text-gray-500 italic">User này chưa có hoạt động nào.</td></tr>';
+        } else {
+          userLogs.forEach((row) => {
+            const tr = document.createElement("tr");
+            tr.className = "border-b border-gray-100 hover:bg-gray-50";
+            tr.innerHTML = `
+                <td class="p-3 whitespace-nowrap text-gray-600">${row.timeStr}</td>
+                <td class="p-3">${row.linkName}</td>
+                <td class="p-3 font-mono text-blue-600 hover-underline cursor-pointer" onclick="window.openKeyStatsModal('${row.keyId}')">${row.keyId}</td>
+                <td class="p-3 text-xs"><span class="bg-gray-100 px-2 py-1 rounded">${row.mode}</span></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+        document.getElementById("user-history-modal").style.display = "flex";
+      };
+
+      // ---- LINK STATS MODAL (NEW FEATURE) ----
+      window.openLinkStats = (linkId, linkName) => {
+        document.getElementById("link-stats-name").textContent = linkName;
+        const tbody = document.getElementById("link-stats-tbody");
+        tbody.innerHTML = "";
+
+        // Filter logs related to this link
+        const allLogs = generateReportData();
+        const linkLogs = allLogs.filter((log) => log.linkId === linkId);
+
+        // Count keys for this link
+        const relatedKeys = Object.values(allKeysData).filter(
+          (k) => k.linkId === linkId
+        ).length;
+
+        document.getElementById("link-stats-total").textContent =
+          linkLogs.length;
+        document.getElementById("link-stats-keys").textContent = relatedKeys;
+
+        if (linkLogs.length === 0) {
+          tbody.innerHTML =
+            '<tr><td colspan="4" class="p-4 text-center text-gray-500 italic">Link này chưa có lượt truy cập nào.</td></tr>';
+        } else {
+          linkLogs.forEach((row) => {
+            const tr = document.createElement("tr");
+            tr.className = "border-b border-gray-100 hover:bg-gray-50";
+            tr.innerHTML = `
+                 <td class="p-3 whitespace-nowrap text-gray-600">${row.timeStr}</td>
+                 <td class="p-3 font-mono text-blue-600 hover-underline cursor-pointer" onclick="window.openUserHistory('${row.uid}')">${row.uid}</td>
+                 <td class="p-3 font-mono text-blue-600 hover-underline cursor-pointer" onclick="window.openKeyStatsModal('${row.keyId}')">${row.keyId}</td>
+                 <td class="p-3 text-xs"><span class="bg-gray-100 px-2 py-1 rounded">${row.mode}</span></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+
+        document.getElementById("link-stats-modal").style.display = "flex";
+      };
+
+      // ---- EXCEL EXPORT & LOGS FUNCTIONALITY ----
+      function generateReportData() {
+        const report = [];
+        Object.entries(allKeysData).forEach(([keyId, key]) => {
+          const linkName =
+            allLinksData[key.linkId]?.name || key.linkName || "Link đã xóa";
+          const mode =
+            key.mode === "single_use"
+              ? "1 Lần"
+              : key.mode === "limited_users"
+              ? `Giới hạn (${key.maxUses})`
+              : "Vĩnh viễn";
+
+          const users = key.allowedUsers || {};
+          if (key.usedBy && !users[key.usedBy])
+            users[key.usedBy] = key.usedAt || key.createdAt;
+
+          if (Object.keys(users).length > 0) {
+            Object.entries(users).forEach(([uid, ts]) => {
+              report.push({
+                time: ts,
+                timeStr: formatTimestamp(ts),
+                uid: uid,
+                keyId: keyId,
+                linkId: key.linkId,
+                linkName: linkName,
+                mode: mode,
+              });
+            });
+          }
+        });
+        return report.sort((a, b) => b.time - a.time);
       }
 
-      function updateStatsView() {
-        const links = Object.values(allLinksData);
-        const keys = Object.values(allKeysData);
+      window.renderLogsTable = () => {
+        const searchTerm = document
+          .getElementById("logs-search")
+          .value.toLowerCase()
+          .trim();
+        const data = generateReportData();
+        const tbody = document.getElementById("logs-table-body");
 
-        // Hoạt ảnh tăng số
-        animateValue(statsTotalLinks, 0, links.length, 1000);
-        animateValue(statsTotalKeys, 0, keys.length, 1000);
-        animateValue(
-          statsTotalClicks,
-          0,
-          keys.reduce((sum, k) => sum + (k.totalClicks || 0), 0),
-          1000
+        const filtered = data.filter(
+          (item) =>
+            item.uid.toLowerCase().includes(searchTerm) ||
+            item.keyId.toLowerCase().includes(searchTerm) ||
+            item.linkName.toLowerCase().includes(searchTerm)
         );
 
-        // --- VIP Stats: Top Links ---
-        const linkClicks = {};
-        keys.forEach((k) => {
-          if (k.linkId)
-            linkClicks[k.linkId] =
-              (linkClicks[k.linkId] || 0) + (k.totalClicks || 0);
+        document.getElementById(
+          "logs-count-badge"
+        ).textContent = `${filtered.length} bản ghi`;
+        tbody.innerHTML = "";
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-500 italic">Không tìm thấy dữ liệu phù hợp.</td></tr>`;
+          return;
+        }
+
+        const displayData = filtered.slice(0, 100);
+        displayData.forEach((row) => {
+          const tr = document.createElement("tr");
+          tr.className =
+            "hover:bg-gray-50 transition-colors border-b border-gray-100";
+          tr.innerHTML = `
+                <td class="p-4 whitespace-nowrap text-gray-600">${row.timeStr}</td>
+                <td class="p-4 font-mono text-xs font-bold text-blue-600 select-all hover-underline cursor-pointer" onclick="window.openUserHistory('${row.uid}')">${row.uid}</td>
+                <td class="p-4 font-mono text-xs select-all hover-underline cursor-pointer" onclick="window.openKeyStatsModal('${row.keyId}')">${row.keyId}</td>
+                <td class="p-4 max-w-xs truncate" title="${row.linkName}">${row.linkName}</td>
+                <td class="p-4"><span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">${row.mode}</span></td>
+            `;
+          tbody.innerHTML += tr.outerHTML;
         });
+        if (filtered.length > 100)
+          tbody.innerHTML += `<tr><td colspan="5" class="p-3 text-center text-xs text-gray-400">...và ${
+            filtered.length - 100
+          } dòng khác</td></tr>`;
+      };
 
-        // Tìm giá trị max để tính % cho progress bar
-        const maxLinkClicks = Math.max(...Object.values(linkClicks), 1); // Avoid div by 0
+      document
+        .getElementById("logs-search")
+        .addEventListener("input", window.renderLogsTable);
 
-        const topLinks = Object.entries(linkClicks)
-          .sort(([, a], [, b]) => b - a)
-          .slice(0, 5);
+      window.exportToExcel = () => {
+        const data = generateReportData();
+        if (data.length === 0) {
+          alert("Chưa có dữ liệu để xuất!");
+          return;
+        }
+        const excelData = data.map((item) => ({
+          "Thời Gian": item.timeStr,
+          "User ID": item.uid,
+          "Key ID": item.keyId,
+          "Tên Link": item.linkName,
+          "Loại Key": item.mode,
+        }));
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        ws["!cols"] = [
+          { wch: 20 },
+          { wch: 35 },
+          { wch: 15 },
+          { wch: 30 },
+          { wch: 20 },
+        ];
+        XLSX.utils.book_append_sheet(wb, ws, "Lịch Sử Truy Cập");
+        XLSX.writeFile(
+          wb,
+          `Bao_Cao_Key_${new Date().toISOString().slice(0, 10)}.xlsx`
+        );
+      };
 
-        statsTopLinks.innerHTML = topLinks.length
-          ? ""
-          : '<p class="text-gray-500 italic">Chưa có dữ liệu.</p>';
+      // ---- MAIN FIREBASE LOGIC ----
+      async function init() {
+        const firebaseConfigStr =
+          typeof __firebase_config !== "undefined" ? __firebase_config : "{}";
+        let firebaseConfig;
+        try {
+          firebaseConfig = JSON.parse(firebaseConfigStr);
+          if (!firebaseConfig.apiKey) throw new Error("Missing Config");
+        } catch (e) {
+          console.warn("Fallback Config");
+          firebaseConfig = {
+            apiKey: "AIzaSyDnSzYda3CUXNtWrW8ytW2Wnx3mFunC9Ig",
+            authDomain: "uniquekey-a0912.firebaseapp.com",
+            databaseURL: "https://uniquekey-a0912-default-rtdb.firebaseio.com",
+            projectId: "uniquekey-a0912",
+            storageBucket: "uniquekey-a0912.firebasestorage.app",
+            messagingSenderId: "440795775727",
+            appId: "1:440795775727:web:1c59c88d5039f47a88d11a",
+          };
+        }
+        appId =
+          typeof __app_id !== "undefined"
+            ? __app_id
+            : "default-app-id-uniquekey";
 
-        topLinks.forEach(([lid, clicks], i) => {
-          // Fix lỗi undefined
-          const name =
-            (allLinksData[lid] && allLinksData[lid].name) ||
-            "Link đã xóa/Unknown";
-          const percent = Math.round((clicks / maxLinkClicks) * 100);
+        const app = initializeApp(firebaseConfig);
+        db = getDatabase(app);
+        auth = getAuth(app);
 
-          statsTopLinks.innerHTML += `
-            <div class="relative pt-1">
-              <div class="flex mb-2 items-center justify-between">
-                <div>
-                  <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200 mr-2">
-                    #${i + 1}
-                  </span>
-                  <span class="font-semibold text-gray-700 text-sm">${name}</span>
-                </div>
-                <div class="text-right">
-                  <span class="text-xs font-semibold inline-block text-blue-600">
-                    ${clicks} clicks
-                  </span>
-                </div>
-              </div>
-              <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-100">
-                <div style="width:${percent}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 progress-bar"></div>
-              </div>
-            </div>`;
-        });
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            const STORAGE_KEY = "dienkon_sticky_user_id";
+            let savedId = localStorage.getItem(STORAGE_KEY);
+            if (savedId) userId = savedId;
+            else {
+              userId = user.uid;
+              localStorage.setItem(STORAGE_KEY, userId);
+            }
 
-        // --- VIP Stats: Top Keys ---
-        const topKeys = keys
-          .sort((a, b) => (b.totalClicks || 0) - (a.totalClicks || 0))
-          .slice(0, 5);
+            document.getElementById("user-id-display").textContent = userId;
+            if (redeemEl.userId) redeemEl.userId.textContent = `ID: ${userId}`;
 
-        const maxKeyClicks =
-          topKeys.length > 0 ? topKeys[0].totalClicks || 1 : 1;
+            linksPath = `artifacts/${appId}/public/data/links`;
+            keysPath = `artifacts/${appId}/public/data/keys`;
 
-        statsTopKeys.innerHTML =
-          topKeys.length && topKeys[0].totalClicks
-            ? ""
-            : '<p class="text-gray-500 italic">Chưa có dữ liệu.</p>';
-
-        topKeys.forEach((k, i) => {
-          if (k.totalClicks > 0) {
-            const percent = Math.round((k.totalClicks / maxKeyClicks) * 100);
-            const noteText = k.note ? ` - ${k.note}` : "";
-
-            statsTopKeys.innerHTML += `
-             <div class="relative pt-1">
-              <div class="flex mb-2 items-center justify-between">
-                <div>
-                   <span class="font-mono text-xs font-bold text-gray-600 mr-2">${
-                     k.id || "Unknow"
-                   }</span>
-                   <span class="text-xs text-gray-500 truncate max-w-[150px] inline-block align-bottom">${noteText}</span>
-                </div>
-                <div class="text-right">
-                  <span class="text-xs font-bold text-green-600">
-                    ${k.totalClicks} clicks
-                  </span>
-                </div>
-              </div>
-               <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-green-100">
-                <div style="width:${percent}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500 progress-bar"></div>
-              </div>
-             </div>`;
+            handleRouting();
+            window.onhashchange = handleRouting;
+          } else {
+            try {
+              if (
+                typeof __initial_auth_token !== "undefined" &&
+                __initial_auth_token
+              )
+                await signInWithCustomToken(auth, __initial_auth_token);
+              else await signInAnonymously(auth);
+            } catch (err) {
+              console.error(err);
+              views.loading.innerHTML =
+                '<p class="text-red-500">Lỗi xác thực hệ thống.</p>';
+            }
           }
         });
       }
 
-      // Hàm chạy hiệu ứng số tăng dần
+      function handleRouting() {
+        const hash = window.location.hash;
+        if (hash.startsWith("#redeem?key=")) {
+          views.loading.style.display = "none";
+          views.admin.style.display = "none";
+          views.redeem.style.display = "flex";
+          handleRedeemKey(hash.split("key=")[1]);
+        } else {
+          document.title = "Admin - Quản Lý Key";
+          views.loading.style.display = "none";
+          views.redeem.style.display = "none";
+          views.admin.style.display = "block";
+          if (
+            views.adminContent.style.display === "none" &&
+            views.stats.style.display === "none" &&
+            views.logs.style.display === "none"
+          )
+            showView("admin-content");
+          loadAdminData();
+        }
+      }
+
+      async function handleRedeemKey(key) {
+        if (!key || !userId) return;
+        redeemEl.loader.style.display = "block";
+        redeemEl.msg.innerHTML = "Đang xác thực Key...";
+        redeemEl.msg.className =
+          "text-blue-800 font-medium text-base animate-pulse";
+        redeemEl.container.className =
+          "bg-blue-50 border border-blue-100 rounded-lg p-6 flex flex-col items-center justify-center min-h-[120px]";
+        await new Promise((r) => setTimeout(r, 1000));
+
+        const keyRef = ref(db, `${keysPath}/${key}`);
+        try {
+          const snap = await get(keyRef);
+          if (!snap.exists()) {
+            showRedeemError("Key không tồn tại hoặc sai!");
+            return;
+          }
+          const kData = snap.val();
+          if (kData.linkName) redeemEl.title.textContent = kData.linkName;
+
+          const allowedUsers = kData.allowedUsers || {};
+          const isOldUser = allowedUsers[userId] || kData.usedBy === userId;
+
+          if (isOldUser) {
+            redeemEl.msg.innerHTML = `<span class="text-indigo-600 font-bold">Chào mừng trở lại!</span><br><span class="text-xs text-gray-500">Đang chuyển hướng...</span>`;
+            redeemEl.container.className =
+              "bg-indigo-50 border border-indigo-200 rounded-lg p-6 flex flex-col items-center justify-center min-h-[120px]";
+            await update(keyRef, { totalClicks: (kData.totalClicks || 0) + 1 });
+            setTimeout(() => doRedirect(kData.linkId), 400);
+            return;
+          }
+
+          if (["used", "full", "expired"].includes(kData.status)) {
+            showRedeemError("Key đã hết lượt sử dụng.");
+            return;
+          }
+
+          let updates = {};
+          const userCount = Object.keys(allowedUsers).length;
+          if (kData.mode === "single_use") {
+            updates = {
+              status: "used",
+              usedAt: rtdbServerTimestamp(),
+              usedBy: userId,
+              [`allowedUsers/${userId}`]: rtdbServerTimestamp(),
+              totalClicks: (kData.totalClicks || 0) + 1,
+            };
+          } else if (kData.mode === "permanent_user") {
+            if (userCount > 0) {
+              showRedeemError("Key này đã thuộc về thiết bị khác.");
+              return;
+            }
+            updates = {
+              status: "claimed",
+              [`allowedUsers/${userId}`]: rtdbServerTimestamp(),
+              totalClicks: (kData.totalClicks || 0) + 1,
+            };
+          } else {
+            if (userCount >= kData.maxUses) {
+              showRedeemError("Key đã đủ số lượng người.");
+              return;
+            }
+            updates[`allowedUsers/${userId}`] = rtdbServerTimestamp();
+            updates.totalClicks = (kData.totalClicks || 0) + 1;
+            if (userCount + 1 >= kData.maxUses) updates.status = "full";
+          }
+          await update(keyRef, updates);
+          redeemEl.msg.innerHTML = `<span class="text-green-600 font-bold text-lg"><ion-icon name="checkmark-circle"></ion-icon> Thành công!</span>`;
+          redeemEl.loader.style.display = "none";
+          redeemEl.container.className =
+            "bg-green-50 border border-green-200 rounded-lg p-6 flex flex-col items-center justify-center min-h-[120px]";
+          setTimeout(() => doRedirect(kData.linkId), 800);
+        } catch (e) {
+          console.error(e);
+          showRedeemError("Lỗi kết nối Server.");
+        }
+      }
+
+      function showRedeemError(msg) {
+        redeemEl.loader.style.display = "none";
+        redeemEl.msg.innerHTML = `<span class="text-red-600 font-bold"><ion-icon name="alert-circle" class="text-xl align-middle"></ion-icon> ${msg}</span>`;
+        redeemEl.container.className =
+          "bg-red-50 border border-red-200 rounded-lg p-6 flex flex-col items-center justify-center min-h-[120px]";
+      }
+
+      async function doRedirect(linkId) {
+        const lRef = ref(db, `${linksPath}/${linkId}`);
+        const snap = await get(lRef);
+        if (snap.exists()) window.location.href = snap.val().targetUrl;
+        else showRedeemError("Link gốc đã bị xóa.");
+      }
+
+      function loadAdminData() {
+        if (!db) return;
+        onValue(ref(db, linksPath), (snap) => {
+          allLinksData = snap.exists() ? snap.val() : {};
+          renderLinksList();
+          renderKeysList();
+        });
+        onValue(ref(db, keysPath), (snap) => {
+          allKeysData = snap.exists() ? snap.val() : {};
+          renderKeysList();
+          updateStatsView();
+          if (views.logs.style.display === "block") renderLogsTable();
+        });
+      }
+
+      function renderLinksList() {
+        const list = document.getElementById("links-list");
+        if (Object.keys(allLinksData).length === 0) {
+          list.innerHTML =
+            '<p class="text-gray-400 text-center py-4 text-sm">Chưa có dữ liệu link.</p>';
+          return;
+        }
+        // const sorted = Object.entries(allLinksData).sort(
+        //   (a, b) => (b.createdAt || 0) - (a.createdAt || 0)
+        // );
+        const sorted = Object.entries(allLinksData).sort((a, b) => {
+          const timeA = a[1].createdAt ? new Date(a[1].createdAt).getTime() : 0;
+          const timeB = b[1].createdAt ? new Date(b[1].createdAt).getTime() : 0;
+          return timeB - timeA;
+        });
+
+        list.innerHTML = "";
+        sorted.forEach(([id, link]) => {
+          const div = document.createElement("div");
+          div.className =
+            "bg-gray-50 p-4 rounded-lg border border-gray-200 hover:shadow-md transition-all";
+          div.innerHTML = `
+                <div class="flex justify-between items-start mb-2"><h4 class="font-bold text-blue-700">${link.name}</h4></div>
+                <p class="text-xs text-gray-500 bg-white p-2 rounded border truncate mb-3 select-all">${link.targetUrl}</p>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="window.openConfigModal('${id}', '${link.name}')" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1.5 px-3 rounded flex items-center"><ion-icon name="key" class="mr-1"></ion-icon> Tạo Key</button>
+                    <button onclick="window.openEditLinkModal('${id}', '${link.name}', '${link.targetUrl}')" class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold py-1.5 px-3 rounded flex items-center"><ion-icon name="create" class="mr-1"></ion-icon> Sửa</button>
+                    <button onclick="window.openConfirmDelete('${id}', 'link')" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1.5 px-3 rounded flex items-center"><ion-icon name="trash" class="mr-1"></ion-icon> Xóa</button>
+                </div>`;
+          list.appendChild(div);
+        });
+      }
+
+      // ---- RENDER KEYS LIST (UPDATED TO MATCH ORIGINAL LAYOUT) ----
+      function renderKeysList() {
+        const searchTerm = document
+          .getElementById("search-key-input")
+          .value.toLowerCase();
+        const list = document.getElementById("keys-list");
+
+        let keys = Object.entries(allKeysData).map(([id, val]) => ({
+          id,
+          ...val,
+        }));
+        keys.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+        if (searchTerm)
+          keys = keys.filter(
+            (k) =>
+              k.id.toLowerCase().includes(searchTerm) ||
+              (k.note && k.note.toLowerCase().includes(searchTerm))
+          );
+        if (keys.length === 0) {
+          list.innerHTML =
+            '<p class="text-gray-400 text-center py-4 text-sm">Không tìm thấy key.</p>';
+          return;
+        }
+
+        list.innerHTML = "";
+        keys.forEach((k) => {
+          const linkName =
+            allLinksData[k.linkId]?.name || k.linkName || "Link đã xóa";
+          const noteHtml = k.note
+            ? `<p class="text-xs text-gray-500 italic mt-1"><ion-icon name="pencil-outline" class="mr-1 align-middle"></ion-icon>${k.note}</p>`
+            : "";
+
+          let statusText = "Active",
+            statusClass = "bg-green-100 text-green-700";
+          if (["used", "full", "expired"].includes(k.status)) {
+            statusText = "Hết hạn";
+            statusClass = "bg-red-100 text-red-700";
+          } else if (k.status === "claimed") {
+            statusText = "Đã nhận";
+            statusClass = "bg-purple-100 text-purple-700";
+          }
+
+          const count = k.allowedUsers ? Object.keys(k.allowedUsers).length : 0;
+          if (k.mode === "limited_users")
+            statusText += ` (${count}/${k.maxUses})`;
+
+          const div = document.createElement("div");
+          div.className =
+            "bg-white p-4 rounded-lg border shadow-sm hover:bg-gray-50 transition-colors";
+          div.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-mono text-sm font-bold text-blue-700 cursor-pointer hover:text-blue-500 flex items-center"
+                           onclick="window.copyKeyFromHistory('${k.id}', this)" title="Click để copy">
+                          <ion-icon name="copy-outline" class="mr-1"></ion-icon> ${k.id}
+                        </p>
+                        <p class="text-xs text-gray-600 mt-1">Link: <strong>${linkName}</strong></p>
+                        ${noteHtml}
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs px-2 py-1 rounded-full font-bold ${statusClass}">
+                            ${statusText}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-3 flex justify-between items-center border-t pt-2">
+                     <p class="text-xs text-gray-500 cursor-pointer hover:text-blue-600 font-semibold flex items-center" onclick="window.openKeyStatsModal('${k.id}')">
+                        <ion-icon name="eye" class="mr-1 text-base"></ion-icon> Chi tiết
+                     </p>
+                     <div class="flex gap-2">
+                        <button onclick="window.openEditKeyModal('${k.id}')" class="text-yellow-600 hover:text-yellow-800 text-xs font-bold px-2 py-1 rounded hover:bg-yellow-50">Sửa</button>
+                        <button onclick="window.openConfirmDelete('${k.id}', 'key')" class="text-red-600 hover:text-red-800 text-xs font-bold px-2 py-1 rounded hover:bg-red-50">Xóa</button>
+                    </div>
+                </div>
+              `;
+          list.appendChild(div);
+        });
+      }
+
+      document
+        .getElementById("search-key-input")
+        .addEventListener("input", renderKeysList);
+
+      function updateStatsView() {
+        const linkArr = Object.values(allLinksData);
+        const keyArr = Object.values(allKeysData);
+        animateValue(
+          document.getElementById("stats-total-links"),
+          0,
+          linkArr.length,
+          1000
+        );
+        animateValue(
+          document.getElementById("stats-total-keys"),
+          0,
+          keyArr.length,
+          1000
+        );
+        const totalClicks = keyArr.reduce(
+          (sum, k) => sum + (k.totalClicks || 0),
+          0
+        );
+        animateValue(
+          document.getElementById("stats-total-clicks"),
+          0,
+          totalClicks,
+          1000
+        );
+
+        const linkClicks = {};
+        keyArr.forEach((k) => {
+          if (k.linkId)
+            linkClicks[k.linkId] =
+              (linkClicks[k.linkId] || 0) + (k.totalClicks || 0);
+        });
+        const sortedLinks = Object.entries(linkClicks)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5);
+        const maxLinkVal = sortedLinks[0]?.[1] || 1;
+        const topLinksEl = document.getElementById("stats-top-links");
+        topLinksEl.innerHTML = sortedLinks.length
+          ? ""
+          : '<p class="text-gray-400 text-xs italic">Chưa có dữ liệu.</p>';
+        sortedLinks.forEach(([lid, val], idx) => {
+          const name = allLinksData[lid]?.name || "Link xóa/ẩn";
+          const pct = Math.round((val / maxLinkVal) * 100);
+          topLinksEl.innerHTML += `
+                 <div class="mb-3"><div class="flex justify-between text-xs mb-1 font-medium text-gray-700"><span>${
+                   idx + 1
+                 }. ${name}</span><span>${val} click</span></div>
+                 <div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-blue-500 h-2 rounded-full" style="width: ${pct}%"></div></div></div>`;
+        });
+
+        const sortedKeys = keyArr
+          .sort((a, b) => (b.totalClicks || 0) - (a.totalClicks || 0))
+          .slice(0, 5);
+        const maxKeyVal = sortedKeys[0]?.totalClicks || 1;
+        const topKeysEl = document.getElementById("stats-top-keys");
+        topKeysEl.innerHTML = sortedKeys[0]?.totalClicks
+          ? ""
+          : '<p class="text-gray-400 text-xs italic">Chưa có dữ liệu.</p>';
+        sortedKeys.forEach((k, idx) => {
+          if (k.totalClicks > 0) {
+            const pct = Math.round((k.totalClicks / maxKeyVal) * 100);
+            topKeysEl.innerHTML += `
+                 <div class="mb-3"><div class="flex justify-between text-xs mb-1 font-medium text-gray-700"><span class="font-mono text-blue-600">${k.id}</span><span>${k.totalClicks} click</span></div>
+                 <div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-red-500 h-2 rounded-full" style="width: ${pct}%"></div></div></div>`;
+          }
+        });
+      }
+
       function animateValue(obj, start, end, duration) {
         if (!obj) return;
         let startTimestamp = null;
@@ -1897,16 +1826,175 @@
           if (!startTimestamp) startTimestamp = timestamp;
           const progress = Math.min((timestamp - startTimestamp) / duration, 1);
           obj.innerHTML = Math.floor(progress * (end - start) + start);
-          if (progress < 1) {
-            window.requestAnimationFrame(step);
-          }
+          if (progress < 1) window.requestAnimationFrame(step);
         };
         window.requestAnimationFrame(step);
       }
 
-      // Start
-      loadingView.style.display = "flex";
-      initializeFirebase();
+      document.getElementById("add-link-form").onsubmit = async (e) => {
+        e.preventDefault();
+        await push(ref(db, linksPath), {
+          name: document.getElementById("link-name").value,
+          targetUrl: document.getElementById("target-url").value,
+          createdAt: rtdbServerTimestamp(),
+        });
+        e.target.reset();
+      };
+      window.openEditLinkModal = (id, name, url) => {
+        document.getElementById("edit-link-id").value = id;
+        document.getElementById("edit-link-name").value = name;
+        document.getElementById("edit-target-url").value = url;
+        document.getElementById("edit-link-modal").style.display = "flex";
+      };
+      document.getElementById("edit-link-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById("edit-link-id").value;
+        await update(ref(db, `${linksPath}/${id}`), {
+          name: document.getElementById("edit-link-name").value,
+          targetUrl: document.getElementById("edit-target-url").value,
+        });
+        closeModal("edit-link-modal");
+      };
+      window.openConfigModal = (id, name) => {
+        document.getElementById("config-link-id").value = id;
+        document.getElementById("config-link-name").textContent = name;
+        document.getElementById("key-limit-group").style.display = "none";
+        document.getElementById("generate-key-form").reset();
+        document.getElementById("generate-key-config-modal").style.display =
+          "flex";
+      };
+      document.querySelectorAll('input[name="keyMode"]').forEach((r) => {
+        r.onchange = (e) => {
+          document.getElementById("key-limit-group").style.display =
+            e.target.value === "limited_users" ? "block" : "none";
+        };
+      });
+      document.getElementById("generate-key-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const linkId = document.getElementById("config-link-id").value;
+        const linkName =
+          document.getElementById("config-link-name").textContent;
+        const mode = document.querySelector(
+          'input[name="keyMode"]:checked'
+        ).value;
+        const note = document.getElementById("key-note").value;
+        let data = {
+          linkId,
+          linkName,
+          mode,
+          note,
+          status: "active",
+          createdAt: rtdbServerTimestamp(),
+          totalClicks: 0,
+        };
+        if (mode === "limited_users")
+          data.maxUses =
+            parseInt(document.getElementById("key-limit-input").value) || 1;
+        const key = Math.random().toString(36).substring(2, 10).toUpperCase();
+        await set(ref(db, `${keysPath}/${key}`), data);
+        closeModal("generate-key-config-modal");
+        const baseUrl = window.location.href.split("#")[0];
+        document.getElementById(
+          "generated-key-link"
+        ).value = `${baseUrl}#redeem?key=${key}`;
+        document.getElementById("generated-key-modal").style.display = "flex";
+        document.getElementById("copy-success").style.display = "none";
+      };
+      window.copyKeyLink = () => {
+        const el = document.getElementById("generated-key-link");
+        el.select();
+        document.execCommand("copy");
+        const succ = document.getElementById("copy-success");
+        succ.style.display = "block";
+        setTimeout(() => (succ.style.display = "none"), 2000);
+      };
+      window.copyKeyFromHistory = (key, btn) => {
+        const baseUrl = window.location.href.split("#")[0];
+        const val = `${baseUrl}#redeem?key=${key}`;
+        const ta = document.createElement("textarea");
+        ta.value = val;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        const oldHTML = btn.innerHTML;
+        btn.innerHTML = "Copied!";
+        btn.classList.add("text-green-600");
+        setTimeout(() => {
+          btn.innerHTML = oldHTML;
+          btn.classList.remove("text-green-600");
+        }, 1000);
+      };
+      window.openEditKeyModal = (id) => {
+        const k = allKeysData[id];
+        document.getElementById("edit-key-id").value = id;
+        document.getElementById("edit-key-id-display").textContent = id;
+        document.getElementById("edit-key-link-name").textContent =
+          k.linkName || "...";
+        document.getElementById("edit-key-note").value = k.note || "";
+        const limitGroup = document.getElementById("edit-key-limit-group");
+        if (k.mode === "limited_users") {
+          limitGroup.style.display = "block";
+          document.getElementById("edit-key-limit-input").value = k.maxUses;
+        } else {
+          limitGroup.style.display = "none";
+        }
+        document.getElementById("edit-key-modal").style.display = "flex";
+      };
+      document.getElementById("edit-key-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById("edit-key-id").value;
+        const note = document.getElementById("edit-key-note").value;
+        let updates = { note };
+        const k = allKeysData[id];
+        if (k.mode === "limited_users") {
+          const newMax = parseInt(
+            document.getElementById("edit-key-limit-input").value
+          );
+          updates.maxUses = newMax;
+          const curUsers = k.allowedUsers
+            ? Object.keys(k.allowedUsers).length
+            : 0;
+          if (curUsers < newMax && k.status === "full")
+            updates.status = "active";
+        }
+        await update(ref(db, `${keysPath}/${id}`), updates);
+        closeModal("edit-key-modal");
+      };
+      document.getElementById("reset-key-btn").onclick = async () => {
+        const id = document.getElementById("edit-key-id").value;
+        await update(ref(db, `${keysPath}/${id}`), {
+          status: "active",
+          allowedUsers: null,
+          usedBy: null,
+          usedAt: null,
+          totalClicks: 0,
+        });
+        alert("Đã reset key về trạng thái mới!");
+        closeModal("edit-key-modal");
+      };
+      window.openConfirmDelete = (id, type) => {
+        const btn = document.getElementById("confirm-delete-btn");
+        const msg = document.getElementById("confirm-message");
+        btn.dataset.id = id;
+        btn.dataset.type = type;
+        if (type === "link")
+          msg.textContent =
+            "Cảnh báo: Xóa Link sẽ làm hỏng tất cả các Key liên quan!";
+        else
+          msg.textContent =
+            "Xóa Key này vĩnh viễn? Dữ liệu thống kê của Key này cũng sẽ mất.";
+        document.getElementById("confirm-modal").style.display = "flex";
+      };
+      document.getElementById("confirm-delete-btn").onclick = async (e) => {
+        const id = e.target.dataset.id;
+        const type = e.target.dataset.type;
+        const p = type === "link" ? linksPath : keysPath;
+        await remove(ref(db, `${p}/${id}`));
+        closeModal("confirm-modal");
+      };
+
+      init();
     </script>
   </body>
 </html>
